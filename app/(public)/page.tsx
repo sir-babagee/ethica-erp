@@ -2,15 +2,41 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import axios from "axios";
+import toast from "react-hot-toast";
+import { useLogin } from "@/lib/auth";
+import { useAuthStore } from "@/stores/authStore";
 
 export default function StaffLoginPage() {
+  const router = useRouter();
+  const setAuth = useAuthStore((s) => s.setAuth);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
+  const { mutate: loginMutation, isPending } = useLogin();
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // UI only - no API logic
+    loginMutation(
+      { email, password },
+      {
+        onSuccess: (res) => {
+          const { staff, permissions } = res.data;
+          setAuth(staff, permissions);
+          toast.success("Login successful");
+          router.push("/u/dashboard");
+        },
+        onError: (error) => {
+          const message =
+            axios.isAxiosError(error) && error.response?.data?.message
+              ? error.response.data.message
+              : "Invalid email or password";
+          toast.error(message);
+        },
+      }
+    );
   };
 
   return (
@@ -138,9 +164,10 @@ export default function StaffLoginPage() {
 
             <button
               type="submit"
-              className="w-full rounded-lg bg-primary px-6 py-3 font-medium text-white shadow-sm transition-colors hover:bg-primary/90 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-secondary focus:ring-offset-2"
+              disabled={isPending}
+              className="w-full rounded-lg bg-primary px-6 py-3 font-medium text-white shadow-sm transition-colors hover:bg-primary/90 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-secondary focus:ring-offset-2 disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              Sign in
+              {isPending ? "Signing in..." : "Sign in"}
             </button>
           </form>
 
