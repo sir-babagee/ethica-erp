@@ -67,7 +67,10 @@ export async function proxyAuthenticatedRequest(
 
     return NextResponse.json(response.data, { status: response.status });
   } catch (error: unknown) {
-    const err = error as { response?: { status?: number; data?: { message?: string } } };
+    const err = error as {
+      code?: string;
+      response?: { status?: number; data?: { message?: string } };
+    };
     if (err.response?.status === 401) {
       const res = NextResponse.json(
         { error: "Token expired" },
@@ -75,6 +78,16 @@ export async function proxyAuthenticatedRequest(
       );
       res.cookies.delete("authToken");
       return res;
+    }
+    if (err.code === "ECONNREFUSED" || err.code === "ENOTFOUND") {
+      return NextResponse.json(
+        {
+          error: "Backend unavailable",
+          message:
+            "Unable to connect to the API server. Please ensure the backend is running.",
+        },
+        { status: 503 }
+      );
     }
     return NextResponse.json(
       {

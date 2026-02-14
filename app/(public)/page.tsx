@@ -26,7 +26,14 @@ export default function StaffLoginPage() {
           const { staff, permissions } = res.data;
           setAuth(staff, permissions);
           toast.success("Login successful");
-          router.push("/u/dashboard");
+          if (staff.requiresPasswordChange) {
+            if (typeof window !== "undefined") {
+              sessionStorage.setItem("tempPasswordForChange", password);
+            }
+            router.push("/u/change-password");
+          } else {
+            router.push("/u/dashboard");
+          }
         },
         onError: (error) => {
           const message =
