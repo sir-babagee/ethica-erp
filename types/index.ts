@@ -79,6 +79,7 @@ export interface CustomerDetail {
   email: string;
   phone: string | null;
   contactAddress: string;
+  contactAddressState: string | null;
   employmentStatus: string;
   employerName: string | null;
   employerAddress: string | null;
@@ -91,6 +92,7 @@ export interface CustomerDetail {
   nokRelationship: string;
   nokEmail: string;
   nokContactAddress: string;
+  nokAddressState: string | null;
   investmentAmount: number;
   tenor: string;
   rollover: string;

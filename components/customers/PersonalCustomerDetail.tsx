@@ -297,6 +297,9 @@ export default function PersonalCustomerDetail({ id }: PersonalCustomerDetailPro
               <span className="whitespace-pre-wrap">{c.contactAddress}</span>
             }
           />
+          {c.contactAddressState && (
+            <DetailRow label="Address state" value={c.contactAddressState} />
+          )}
         </DetailSection>
 
         <DetailSection title="Employment">
@@ -335,6 +338,9 @@ export default function PersonalCustomerDetail({ id }: PersonalCustomerDetailPro
               <span className="whitespace-pre-wrap">{c.nokContactAddress}</span>
             }
           />
+          {c.nokAddressState && (
+            <DetailRow label="Address state" value={c.nokAddressState} />
+          )}
         </DetailSection>
 
         <DetailSection title="Investment Details">
