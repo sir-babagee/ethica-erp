@@ -1,6 +1,6 @@
 import type { PEPData } from "@/types";
 
-/** Non-PEP column keys (excludes id, approvedById, activity, rejectedById) */
+/** Direct text fields only (excludes id, activity, arrays, nested objects) */
 export const NON_PEP_COLUMN_KEYS = [
   "customerId",
   "status",
@@ -42,15 +42,12 @@ export const NON_PEP_COLUMN_KEYS = [
   "accountNumber",
   "accountName",
   "tin",
-  "contactPersons",
-  "sourceOfWealth",
-  "sourceOfWealthDetails",
   "termsAccepted",
   "createdAt",
   "updatedAt",
 ] as const;
 
-/** PEP column keys (PEP section last) */
+/** PEP column keys (nested - included for completeness; flatten from pepData) */
 export const PEP_COLUMN_KEYS = [
   "isPEP",
   "pepIsSelf",
@@ -115,9 +112,6 @@ const COLUMN_LABELS: Record<string, string> = {
   accountNumber: "Account Number",
   accountName: "Account Name",
   tin: "TIN",
-  contactPersons: "Contact Persons",
-  sourceOfWealth: "Source of Wealth",
-  sourceOfWealthDetails: "Source of Wealth Details",
   termsAccepted: "Terms Accepted",
   createdAt: "Created At",
   updatedAt: "Updated At",
@@ -141,6 +135,34 @@ const COLUMN_LABELS: Record<string, string> = {
   pepSubjectToSanctions: "PEP Subject to Sanctions",
   pepInvestigated: "PEP Investigated",
   pepSanctionsDetails: "PEP Sanctions Details",
+  // Corporate
+  companyCategory: "Company Category",
+  companyName: "Company Name",
+  registrationNumber: "Registration Number",
+  dateOfIncorporation: "Date of Incorporation",
+  countryOfIncorporation: "Country of Incorporation",
+  typeOfBusiness: "Type of Business",
+  sectorIndustry: "Sector/Industry",
+  operatingAddress: "Operating Address",
+  operatingState: "Operating State",
+  registeredAddress: "Registered Address",
+  registeredState: "Registered State",
+  phone1: "Phone 1",
+  phone2: "Phone 2",
+  scumlRegNo: "SCUML Reg No",
+  otherJurisdiction: "Other Jurisdiction",
+  usTaxId: "US Tax ID",
+  primaryBankName: "Primary Bank",
+  primaryAccountName: "Primary Account Name",
+  primaryAccountNumber: "Primary Account Number",
+  secondaryBankName: "Secondary Bank",
+  secondaryAccountName: "Secondary Account Name",
+  secondaryAccountNumber: "Secondary Account Number",
+  initialInvestmentAmount: "Initial Investment Amount",
+  designatedEmail: "Designated Email",
+  designatedPhone: "Designated Phone",
+  indemnityConfirmed: "Indemnity Confirmed",
+  dataUsageAgreed: "Data Usage Agreed",
 };
 
 /**

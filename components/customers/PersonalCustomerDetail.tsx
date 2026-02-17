@@ -2,13 +2,19 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import axios from "axios";
 import toast from "react-hot-toast";
-import { useCustomer, useApproveCustomer } from "@/services/customers";
+import {
+  useCustomer,
+  useApproveCustomer,
+  useEscalateCustomer,
+} from "@/services/customers";
 import { useAuthStore } from "@/stores/authStore";
 import { PERMISSIONS } from "@/constants/roles";
 import ApproveCustomerModal from "@/components/Modals/ApproveCustomerModal";
+import EscalateCustomerModal from "@/components/Modals/EscalateCustomerModal";
+import ImageViewer from "@/components/ImageViewer";
 import type { CustomerDetail, PEPData } from "@/types";
 
 function formatCurrency(amount: number | string): string {
@@ -97,16 +103,26 @@ function ChevronLeftIcon({ className }: { className?: string }) {
   );
 }
 
-export default function CustomerDetailPage() {
-  const params = useParams();
-  const id = params.id as string;
+interface PersonalCustomerDetailProps {
+  id: string;
+}
+
+export default function PersonalCustomerDetail({ id }: PersonalCustomerDetailProps) {
+  const router = useRouter();
+  const user = useAuthStore((s) => s.user);
   const permissions = useAuthStore((s) => s.permissions);
   const [approveModalOpen, setApproveModalOpen] = useState(false);
+  const [escalateModalOpen, setEscalateModalOpen] = useState(false);
   const { data: customer, isLoading, error } = useCustomer(id);
   const approveMutation = useApproveCustomer(id);
+  const escalateMutation = useEscalateCustomer(id);
 
   const canApprove =
     permissions.includes(PERMISSIONS.ONBOARDING_APPROVE) &&
+    customer?.status === "unverified";
+
+  const canEscalate =
+    permissions.includes(PERMISSIONS.ONBOARDING_VIEW) &&
     customer?.status === "unverified";
 
   if (isLoading) {
@@ -142,7 +158,7 @@ export default function CustomerDetailPage() {
             : "Failed to load customer. Please try again later."}
         </div>
         <Link
-          href="/u/customers"
+          href="/u/customers?tab=personal"
           className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-primary hover:text-primary/90"
         >
           <ChevronLeftIcon className="h-4 w-4" />
@@ -156,16 +172,17 @@ export default function CustomerDetailPage() {
   const fullName = [c.title, c.firstName, c.lastName, c.otherName]
     .filter(Boolean)
     .join(" ");
-  const nokPhone = c.nokCountryCode && c.nokPhoneNumber
-    ? `${c.nokCountryCode} ${c.nokPhoneNumber}`
-    : c.nokPhoneNumber;
+  const nokPhone =
+    c.nokCountryCode && c.nokPhoneNumber
+      ? `${c.nokCountryCode} ${c.nokPhoneNumber}`
+      : c.nokPhoneNumber;
 
   return (
     <div className="p-8">
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
           <Link
-            href="/u/customers"
+            href="/u/customers?tab=personal"
             className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900"
           >
             <ChevronLeftIcon className="h-5 w-5" />
@@ -183,7 +200,6 @@ export default function CustomerDetailPage() {
       </div>
 
       <div className="space-y-6">
-        {/* Application status */}
         <DetailSection title="Application Status">
           <DetailRow label="Status" value={<StatusBadge status={c.status} />} />
           <DetailRow label="Customer ID" value={c.customerId} />
@@ -212,7 +228,9 @@ export default function CustomerDetailPage() {
                       className={
                         item.action === "approved"
                           ? "font-medium text-emerald-700"
-                          : "font-medium text-slate-700"
+                          : item.action === "escalated"
+                            ? "font-medium text-amber-700"
+                            : "font-medium text-slate-700"
                       }
                     >
                       {item.action}
@@ -230,56 +248,36 @@ export default function CustomerDetailPage() {
           )}
         </DetailSection>
 
-        {/* Documents */}
         {(c.passportPhoto || c.idUpload || c.signature || c.idType) && (
           <DetailSection title="Documents & Identity">
             {c.passportPhoto && (
-              <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:gap-4">
-                <dt className="min-w-[140px] text-sm font-medium text-gray-500">
-                  Passport photo
-                </dt>
-                <dd>
-                  <img
-                    src={c.passportPhoto}
-                    alt="Passport"
-                    className="h-24 w-24 rounded-lg border border-gray-200 object-cover"
-                  />
-                </dd>
-              </div>
+              <ImageViewer
+                src={c.passportPhoto}
+                alt="Passport"
+                label="Passport photo"
+                thumbnailClassName="h-24 w-24 rounded-lg border border-gray-200 object-cover cursor-pointer transition-opacity hover:opacity-90"
+              />
             )}
             <DetailRow label="ID type" value={c.idType} />
             {c.idUpload && (
-              <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:gap-4">
-                <dt className="min-w-[140px] text-sm font-medium text-gray-500">
-                  ID document
-                </dt>
-                <dd>
-                  <img
-                    src={c.idUpload}
-                    alt="ID"
-                    className="max-h-48 rounded-lg border border-gray-200 object-contain"
-                  />
-                </dd>
-              </div>
+              <ImageViewer
+                src={c.idUpload}
+                alt="ID"
+                label="ID document"
+                thumbnailClassName="max-h-48 max-w-48 rounded-lg border border-gray-200 object-contain cursor-pointer transition-opacity hover:opacity-90"
+              />
             )}
             {c.signature && (
-              <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:gap-4">
-                <dt className="min-w-[140px] text-sm font-medium text-gray-500">
-                  Signature
-                </dt>
-                <dd>
-                  <img
-                    src={c.signature}
-                    alt="Signature"
-                    className="h-16 rounded border border-gray-200 bg-white object-contain"
-                  />
-                </dd>
-              </div>
+              <ImageViewer
+                src={c.signature}
+                alt="Signature"
+                label="Signature"
+                thumbnailClassName="h-16 w-32 rounded border border-gray-200 bg-white object-contain cursor-pointer transition-opacity hover:opacity-90"
+              />
             )}
           </DetailSection>
         )}
 
-        {/* Personal information */}
         <DetailSection title="Personal Information">
           <DetailRow label="Title" value={c.title} />
           <DetailRow label="First name" value={c.firstName} />
@@ -301,7 +299,6 @@ export default function CustomerDetailPage() {
           />
         </DetailSection>
 
-        {/* Employment */}
         <DetailSection title="Employment">
           <DetailRow label="Employment status" value={c.employmentStatus} />
           {c.employmentStatus === "Employed" && (
@@ -319,7 +316,6 @@ export default function CustomerDetailPage() {
           )}
         </DetailSection>
 
-        {/* Next of kin */}
         <DetailSection title="Next of Kin">
           <DetailRow
             label="Full name"
@@ -341,7 +337,6 @@ export default function CustomerDetailPage() {
           />
         </DetailSection>
 
-        {/* Investment */}
         <DetailSection title="Investment Details">
           <DetailRow
             label="Investment amount"
@@ -355,7 +350,6 @@ export default function CustomerDetailPage() {
           <DetailRow label="Profit remittance" value={c.profitRemittance} />
         </DetailSection>
 
-        {/* Bank details */}
         <DetailSection title="Bank Details">
           <DetailRow label="BVN" value={c.bvn} />
           <DetailRow label="Bank name" value={c.bankName} />
@@ -364,7 +358,6 @@ export default function CustomerDetailPage() {
           <DetailRow label="TIN" value={c.tin} />
         </DetailSection>
 
-        {/* Contact persons */}
         {c.contactPersons && c.contactPersons.length > 0 && (
           <DetailSection title="Contact Persons">
             <ul className="space-y-2">
@@ -377,7 +370,6 @@ export default function CustomerDetailPage() {
           </DetailSection>
         )}
 
-        {/* Source of wealth */}
         {(c.sourceOfWealth?.length || c.sourceOfWealthDetails) && (
           <DetailSection title="Source of Wealth">
             {c.sourceOfWealth && c.sourceOfWealth.length > 0 && (
@@ -414,14 +406,12 @@ export default function CustomerDetailPage() {
           </DetailSection>
         )}
 
-        {/* PEP */}
         {c.pepData && (c.pepData as PEPData).isPEP && (
           <DetailSection title="Politically Exposed Person (PEP)">
             <PEPDetails pep={c.pepData as PEPData} />
           </DetailSection>
         )}
 
-        {/* Terms */}
         <DetailSection title="Terms & Conditions">
           <DetailRow
             label="Terms accepted"
@@ -438,26 +428,38 @@ export default function CustomerDetailPage() {
           />
         </DetailSection>
 
-        {/* Approve action */}
-        {canApprove && (
+        {(canApprove || canEscalate) && (
           <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">
-                  Approve application
+                  Application actions
                 </h2>
                 <p className="mt-1 text-sm text-gray-500">
-                  Confirm that you have reviewed this application and approve the
-                  customer for onboarding.
+                  Review this application and approve, or escalate to the next
+                  tier if you cannot handle this approval.
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={() => setApproveModalOpen(true)}
-                className="shrink-0 rounded-lg bg-primary px-6 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary/90"
-              >
-                Approve customer
-              </button>
+              <div className="flex shrink-0 gap-3">
+                {canApprove && (
+                  <button
+                    type="button"
+                    onClick={() => setApproveModalOpen(true)}
+                    className="rounded-lg bg-primary px-6 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary/90"
+                  >
+                    Approve customer
+                  </button>
+                )}
+                {canEscalate && (
+                  <button
+                    type="button"
+                    onClick={() => setEscalateModalOpen(true)}
+                    className="rounded-lg border border-amber-300 bg-white px-6 py-2.5 text-sm font-medium text-amber-700 transition-colors hover:bg-amber-50"
+                  >
+                    Escalate
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -481,6 +483,31 @@ export default function CustomerDetailPage() {
             });
           }}
           isPending={approveMutation.isPending}
+        />
+
+        <EscalateCustomerModal
+          open={escalateModalOpen}
+          handleClose={() => setEscalateModalOpen(false)}
+          currentRole={
+            customer?.currentAssigneeRole ?? user?.role ?? "customer_service"
+          }
+          onConfirm={(toRole, reason) => {
+            escalateMutation.mutate({ toRole, reason }, {
+              onSuccess: () => {
+                toast.success("Customer escalated successfully");
+                setEscalateModalOpen(false);
+                router.push("/u/customers?tab=personal");
+              },
+              onError: (err) => {
+                const message =
+                  axios.isAxiosError(err) && err.response?.data?.message
+                    ? err.response.data.message
+                    : "Failed to escalate customer";
+                toast.error(message);
+              },
+            });
+          }}
+          isPending={escalateMutation.isPending}
         />
       </div>
     </div>
@@ -515,8 +542,7 @@ function PEPDetails({ pep }: { pep: PEPData }) {
       {rows.map(({ label, key }) => {
         const val = pep[key];
         if (val === undefined || val === null || val === "") return null;
-        const display =
-          Array.isArray(val) ? val.join(", ") : String(val);
+        const display = Array.isArray(val) ? val.join(", ") : String(val);
         return <DetailRow key={key} label={label} value={display} />;
       })}
     </div>

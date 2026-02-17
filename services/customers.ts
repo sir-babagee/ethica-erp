@@ -4,9 +4,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import type { CustomerDetail, CustomersResponse } from "@/types";
 
-export function useCustomers(page = 1, limit = 10) {
+export function useCustomers(page = 1, limit = 10, enabled = true) {
   return useQuery({
     queryKey: ["customers", page, limit],
+    enabled,
     queryFn: async () => {
       const res = await api.get<CustomersResponse>("/api/proxy/customers", {
         params: { page, limit },
@@ -36,6 +37,26 @@ export function useApproveCustomer(customerId: string | null) {
     mutationFn: async () => {
       const res = await api.patch<{ data: CustomerDetail }>(
         `/api/proxy/staff/customers/${customerId}/approve`
+      );
+      return res.data;
+    },
+    onSuccess: () => {
+      if (customerId) {
+        queryClient.invalidateQueries({ queryKey: ["customer", customerId] });
+      }
+      queryClient.invalidateQueries({ queryKey: ["customers"] });
+    },
+  });
+}
+
+export function useEscalateCustomer(customerId: string | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: { toRole: string; reason?: string }) => {
+      const res = await api.patch<{ data: CustomerDetail }>(
+        `/api/proxy/staff/customers/${customerId}/escalate`,
+        payload
       );
       return res.data;
     },
