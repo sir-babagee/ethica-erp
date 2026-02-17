@@ -347,7 +347,7 @@ export default function PersonalCustomerDetail({ id }: PersonalCustomerDetailPro
             }
           />
           <DetailRow label="Tenor" value={c.tenor} />
-          <DetailRow label="Profit remittance" value={c.profitRemittance} />
+          <DetailRow label="Rollover" value={c.rollover} />
         </DetailSection>
 
         <DetailSection title="Bank Details">

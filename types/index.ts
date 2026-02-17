@@ -93,7 +93,7 @@ export interface CustomerDetail {
   nokContactAddress: string;
   investmentAmount: number;
   tenor: string;
-  profitRemittance: string;
+  rollover: string;
   signature: string | null;
   bvn: string;
   bankName: string;
