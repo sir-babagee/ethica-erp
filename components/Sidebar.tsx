@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
-import { PERMISSIONS } from "@/constants/roles";
+import { PERMISSIONS, ROLE_LABELS } from "@/constants/roles";
 
 const navItems = [
   { href: "/u/dashboard", label: "Dashboard", icon: DashboardIcon },
@@ -20,6 +20,12 @@ const navItems = [
     label: "Add Staff",
     icon: UserPlusIcon,
     permission: PERMISSIONS.STAFF_CREATE,
+  },
+  {
+    href: "/u/activity-logs",
+    label: "Activity Logs",
+    icon: ActivityLogsIcon,
+    permission: PERMISSIONS.ACTIVITY_LOGS_VIEW,
   },
 ];
 
@@ -113,6 +119,24 @@ function LogoutIcon({ className }: { className?: string }) {
   );
 }
 
+function ActivityLogsIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
+      />
+    </svg>
+  );
+}
+
 function SettingsIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -195,7 +219,7 @@ export function Sidebar() {
             </p>
             <p className="truncate text-xs text-gray-500">{user?.email}</p>
             <span className="mt-1 inline-block rounded bg-primary/10 px-2 py-0.5 text-xs font-medium capitalize text-primary">
-              {user?.role?.replace("_", " ")}
+              {user?.role ? (ROLE_LABELS[user.role] ?? user.role.replace(/_/g, " ")) : ""}
             </span>
           </div>
           <div className="space-y-0.5">

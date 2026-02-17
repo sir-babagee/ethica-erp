@@ -47,4 +47,27 @@ export const PERMISSIONS = {
   ONBOARDING_APPROVE: "onboarding:approve",
   ONBOARDING_REJECT: "onboarding:reject",
   CUSTOMERS_VIEW: "customers:view",
+  ACTIVITY_LOGS_VIEW: "activity_logs:view",
 } as const;
+
+/**
+ * Human-readable display labels for each role.
+ * This is the single source of truth for role labels in the ERP.
+ * Add new roles here when they are added to the backend.
+ */
+export const ROLE_LABELS: Record<string, string> = {
+  [ROLES.ADMIN]: "Admin",
+  [ROLES.CUSTOMER_SERVICE]: "Customer Service",
+  [ROLES.FUND_ACCOUNTANT]: "Fund Accountant",
+  [ROLES.COMPLIANCE_OFFICER]: "Compliance Officer",
+  [ROLES.MD]: "MD",
+  [ROLES.BOARD_MEMBER]: "Board Member",
+};
+
+/**
+ * All non-admin roles as [value, label] pairs — useful for filter dropdowns
+ * and staff creation forms.
+ */
+export const ALL_ROLES = Object.entries(ROLE_LABELS).filter(
+  ([value]) => value !== ROLES.ADMIN
+);

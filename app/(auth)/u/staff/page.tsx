@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAllStaff } from "@/services/staff";
 import type { Staff } from "@/types/auth";
-import { PERMISSIONS } from "@/constants/roles";
+import { PERMISSIONS, ROLE_LABELS } from "@/constants/roles";
 import { useAuthStore } from "@/stores/authStore";
 
 export default function StaffPage() {
@@ -104,7 +104,7 @@ export default function StaffPage() {
                   </td>
                   <td className="whitespace-nowrap px-6 py-4">
                     <span className="inline-flex rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium capitalize text-primary">
-                      {staff.role?.replace("_", " ")}
+                      {ROLE_LABELS[staff.role] ?? staff.role.replace(/_/g, " ")}
                     </span>
                   </td>
                   <td className="whitespace-nowrap px-6 py-4">
