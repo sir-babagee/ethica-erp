@@ -93,7 +93,11 @@ export default function StaffPage() {
               </tr>
             ) : (
               staffList?.map((staff: Staff) => (
-                <tr key={staff.id} className="hover:bg-gray-50">
+                <tr
+                  key={staff.id}
+                  onClick={() => router.push(`/u/staff/${staff.id}`)}
+                  className="cursor-pointer transition-colors hover:bg-gray-50"
+                >
                   <td className="whitespace-nowrap px-6 py-4">
                     <span className="font-medium text-gray-900">
                       {staff.firstName} {staff.lastName}

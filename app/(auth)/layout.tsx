@@ -13,11 +13,20 @@ export default function AuthLayout({
   const pathname = usePathname();
   const router = useRouter();
   const setAuth = useAuthStore((s) => s.setAuth);
-  const clearAuth = useAuthStore((s) => s.clearAuth);
-  const [authChecked, setAuthChecked] = useState(false);
+  const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+
+  const [authChecked, setAuthChecked] = useState(isAuthenticated);
 
   useEffect(() => {
-    clearAuth();
+    if (isAuthenticated && user) {
+      if (user.requiresPasswordChange && pathname !== "/u/change-password") {
+        router.replace("/u/change-password");
+      }
+      setAuthChecked(true);
+      return;
+    }
+
     api
       .get("/api/auth/me")
       .then((res) => {
@@ -28,12 +37,13 @@ export default function AuthLayout({
         }
       })
       .catch(() => {
-        // 401 will be handled by api interceptor (redirect to /)
+        // 401 is handled by the api interceptor (redirects to /)
       })
       .finally(() => {
         setAuthChecked(true);
       });
-  }, [setAuth, clearAuth, pathname, router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (!authChecked) {
     return (
