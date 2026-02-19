@@ -3,6 +3,7 @@ export const ROLES = {
   CUSTOMER_SERVICE: "customer_service",
   FUND_ACCOUNTANT: "fund_accountant",
   COMPLIANCE_OFFICER: "compliance_officer",
+  CFO: "cfo",
   MD: "md",
   BOARD_MEMBER: "board_member",
 } as const;
@@ -11,6 +12,7 @@ export const CREATABLE_ROLES = [
   { value: ROLES.CUSTOMER_SERVICE, label: "Customer Service" },
   { value: ROLES.FUND_ACCOUNTANT, label: "Fund Accountant" },
   { value: ROLES.COMPLIANCE_OFFICER, label: "Compliance Officer" },
+  { value: ROLES.CFO, label: "Chief Financial Officer" },
   { value: ROLES.MD, label: "MD" },
   { value: ROLES.BOARD_MEMBER, label: "Board Member" },
 ] as const;
@@ -48,6 +50,9 @@ export const PERMISSIONS = {
   ONBOARDING_REJECT: "onboarding:reject",
   CUSTOMERS_VIEW: "customers:view",
   ACTIVITY_LOGS_VIEW: "activity_logs:view",
+  INVESTMENTS_VIEW: "investments:view",
+  INVESTMENTS_CREATE: "investments:create",
+  INVESTMENTS_APPROVE: "investments:approve",
 } as const;
 
 /**
@@ -60,6 +65,7 @@ export const ROLE_LABELS: Record<string, string> = {
   [ROLES.CUSTOMER_SERVICE]: "Customer Service",
   [ROLES.FUND_ACCOUNTANT]: "Fund Accountant",
   [ROLES.COMPLIANCE_OFFICER]: "Compliance Officer",
+  [ROLES.CFO]: "Chief Financial Officer",
   [ROLES.MD]: "MD",
   [ROLES.BOARD_MEMBER]: "Board Member",
 };

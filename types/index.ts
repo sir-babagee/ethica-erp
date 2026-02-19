@@ -20,3 +20,11 @@ export type {
   CorporateCustomersResponse,
   CorporateCustomerDetail,
 } from "./corporate-customer";
+export type {
+  InvestmentStatus,
+  CustomerType,
+  Investment,
+  InvestmentsResponse,
+  CustomerLookupResult,
+  CreateInvestmentPayload,
+} from "./investment";
