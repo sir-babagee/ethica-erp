@@ -154,13 +154,6 @@ export default function StaffLoginPage() {
             </div>
 
             <div className="flex items-center justify-between">
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                />
-                <span className="ml-2 text-sm text-gray-600">Remember me</span>
-              </label>
               <a
                 href="#"
                 className="text-sm font-medium text-primary hover:text-primary/90 focus:outline-none focus:underline"

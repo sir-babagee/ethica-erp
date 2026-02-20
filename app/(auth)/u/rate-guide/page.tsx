@@ -9,7 +9,7 @@ import {
   useDeleteRateGuide,
   useBulkReplaceRateGuides,
   type RateGuide,
-} from "@/lib/queries/rate-guides";
+} from "@/services/rate-guides";
 import type { CreateRateGuidePayload } from "@/types";
 import { EMPTY_FORM, type FormState } from "./_components/form-config";
 import { RateGuideModal } from "./_components/RateGuideModal";
@@ -18,7 +18,7 @@ import { RateGuideRow } from "./_components/RateGuideRow";
 import { SkeletonRows } from "./_components/SkeletonRows";
 import { ImportModal } from "./_components/ImportModal";
 import { ActionsMenu } from "./_components/ActionsMenu";
-import { exportRateGuidesToXlsx, exportRateGuidesToCsv } from "@/lib/utils/exportRateGuide";
+import { exportRateGuidesToXlsx, exportRateGuidesToCsv } from "@/utils/exportRateGuide";
 
 type ModalMode = { kind: "add" } | { kind: "edit"; guide: RateGuide };
 

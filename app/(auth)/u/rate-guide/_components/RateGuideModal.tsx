@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { formatWithCommas, parseFormattedNumber } from "@/lib/utils/formatters";
+import { formatAmountInputDisplay, parseFormattedNumber } from "@/utils/priceFormatter";
 import { type FormState, type FieldDef, FIELDS, RATIO_PAIRS, RATIO_LINKED } from "./form-config";
 
 interface ModalProps {
@@ -131,8 +131,8 @@ function RatioPairSection({ pair, form, onNumber, inputClass }: RatioPairSection
 export function RateGuideModal({ mode, initial, onClose, onSubmit, loading }: ModalProps) {
   const [form, setForm] = useState<FormState>({ ...initial });
   const [amountDisplays, setAmountDisplays] = useState({
-    minimumAmount: initial.minimumAmount > 0 ? formatWithCommas(String(initial.minimumAmount)) : "",
-    maximumAmount: initial.maximumAmount > 0 ? formatWithCommas(String(initial.maximumAmount)) : "",
+    minimumAmount: initial.minimumAmount > 0 ? formatAmountInputDisplay(String(initial.minimumAmount)) : "",
+    maximumAmount: initial.maximumAmount > 0 ? formatAmountInputDisplay(String(initial.maximumAmount)) : "",
   });
 
   function setNumber(key: keyof FormState, value: string) {
@@ -149,12 +149,7 @@ export function RateGuideModal({ mode, initial, onClose, onSubmit, loading }: Mo
   }
 
   function setAmount(key: "minimumAmount" | "maximumAmount", raw: string) {
-    const formatted = formatWithCommas(raw);
-    const numeric = raw.replace(/,/g, "");
-    const display =
-      numeric.endsWith(".") && numeric.indexOf(".") === numeric.length - 1
-        ? `${formatted}.`
-        : formatted;
+    const display = formatAmountInputDisplay(raw);
     setAmountDisplays((prev) => ({ ...prev, [key]: display }));
     setForm((prev) => ({ ...prev, [key]: parseFormattedNumber(display) }));
   }

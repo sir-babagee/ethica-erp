@@ -7,8 +7,8 @@ import {
   useUnreadCount,
   useMarkAsRead,
   useMarkAllAsRead,
-} from "@/lib/queries/notifications";
-import type { Notification } from "@/lib/queries/notifications";
+} from "@/services/notifications";
+import type { Notification } from "@/services/notifications";
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 

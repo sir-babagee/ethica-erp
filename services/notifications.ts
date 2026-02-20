@@ -29,6 +29,7 @@ export function useUnreadCount() {
       return res.data.count;
     },
     refetchInterval: 30_000,
+    refetchIntervalInBackground: false,
   });
 }
 

@@ -7,7 +7,7 @@ import {
   useInvestments,
   useApproveInvestment,
   useRejectInvestment,
-} from "@/lib/queries/investments";
+} from "@/services/investments";
 import { useAuthStore } from "@/stores/authStore";
 import { PERMISSIONS, ROLES } from "@/constants/roles";
 import type { Investment } from "@/types";

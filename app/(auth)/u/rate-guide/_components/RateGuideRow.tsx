@@ -1,7 +1,7 @@
 "use client";
 
-import { fmtPct, fmtCurrency } from "@/lib/utils/formatters";
-import type { RateGuide } from "@/lib/queries/rate-guides";
+import { fmtPct, fmtCurrency } from "@/utils/formatters";
+import type { RateGuide } from "@/services/rate-guides";
 
 interface RowProps {
   guide: RateGuide;

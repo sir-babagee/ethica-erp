@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
-import { fmtPct, fmtCurrency } from "@/lib/utils/formatters";
-import { parseRateGuideFile, downloadRateGuideTemplate, type ParsedRow } from "@/lib/utils/parseRateGuideFile";
+import { fmtPct, fmtCurrency } from "@/utils/formatters";
+import { parseRateGuideFile, downloadRateGuideTemplate, type ParsedRow } from "@/utils/parseRateGuideFile";
 import type { CreateRateGuidePayload } from "@/types";
 
 // ─── Types ───────────────────────────────────────────────────────────────────

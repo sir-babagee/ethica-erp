@@ -13,14 +13,19 @@ export type AnalyticsData = {
   totalStaff: number;
 };
 
+type AnalyticsApiResponse = {
+  message: string;
+  data: AnalyticsData;
+};
+
+async function fetchAnalytics(): Promise<AnalyticsData> {
+  const res = await api.get<AnalyticsApiResponse>("/api/proxy/analytics");
+  return res.data.data;
+}
+
 export function useAnalytics() {
   return useQuery({
     queryKey: ["analytics"],
-    queryFn: async () => {
-      const res = await api.get<{ data: AnalyticsData }>(
-        "/api/proxy/analytics"
-      );
-      return res.data.data;
-    },
+    queryFn: fetchAnalytics,
   });
 }
