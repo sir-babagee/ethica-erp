@@ -288,9 +288,12 @@ export default function TransactionsPage() {
                   investments.map((inv) => (
                     <tr key={inv.id} className="transition-colors hover:bg-gray-50">
                       <td className="whitespace-nowrap px-5 py-4">
-                        <span className="font-mono text-sm font-semibold text-primary">
+                        <Link
+                          href={`/u/transactions/${inv.id}`}
+                          className="font-mono text-sm font-semibold text-primary hover:underline"
+                        >
                           {inv.investmentRef}
-                        </span>
+                        </Link>
                       </td>
                       <td className="px-5 py-4">
                         <p className="text-sm font-medium text-gray-900">
