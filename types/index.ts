@@ -28,3 +28,9 @@ export type {
   CustomerLookupResult,
   CreateInvestmentPayload,
 } from "./investment";
+export type {
+  RateGuide,
+  CreateRateGuidePayload,
+  UpdateRateGuidePayload,
+  BulkReplaceRateGuidesPayload,
+} from "./rate-guide";

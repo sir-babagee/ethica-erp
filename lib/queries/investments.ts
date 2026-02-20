@@ -37,6 +37,25 @@ export function useInvestment(id: string) {
   });
 }
 
+export interface CustomerSearchResult {
+  id: string;
+  customerId: string;
+  name: string;
+  type: "personal" | "corporate";
+}
+
+export function useCustomerSearch(q: string) {
+  return useQuery({
+    queryKey: ["customer-search", q],
+    queryFn: async () => {
+      const res = await api.get<CustomerSearchResult[]>("/api/proxy/investments/customer-search", { params: { q } });
+      return res.data;
+    },
+    enabled: q.trim().length >= 1,
+    staleTime: 10_000,
+  });
+}
+
 export function useCustomerLookup(code: string) {
   return useQuery({
     queryKey: ["customer-lookup", code],

@@ -53,6 +53,7 @@ export const PERMISSIONS = {
   INVESTMENTS_VIEW: "investments:view",
   INVESTMENTS_CREATE: "investments:create",
   INVESTMENTS_APPROVE: "investments:approve",
+  RATE_GUIDE_MANAGE: "rate_guide:manage",
 } as const;
 
 /**
