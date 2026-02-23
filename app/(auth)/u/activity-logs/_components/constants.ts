@@ -31,6 +31,23 @@ export const ACTION_GROUPS = [
       { value: "password_changed", label: "Changed Password" },
     ],
   },
+  {
+    label: "Rate Guide Management",
+    actions: [
+      { value: "create_rate_guide", label: "Created Rate Guide" },
+      { value: "update_rate_guide", label: "Updated Rate Guide" },
+      { value: "delete_rate_guide", label: "Deleted Rate Guide" },
+      { value: "bulk_replace_rate_guide", label: "Bulk Replaced Rate Guide" },
+    ],
+  },
+  {
+    label: "Investment Management",
+    actions: [
+      { value: "create_investment", label: "Created Investment" },
+      { value: "approve_investment", label: "Approved Investment" },
+      { value: "reject_investment", label: "Rejected Investment" },
+    ],
+  },
 ];
 
 export const ACTION_LABELS: Record<string, string> = ACTION_GROUPS.flatMap(
@@ -52,4 +69,11 @@ export const ACTION_STYLES: Record<string, string> = {
   escalate_corporate_customer: "bg-blue-100 text-blue-800",
   create_staff: "bg-purple-100 text-purple-800",
   password_changed: "bg-slate-100 text-slate-700",
+  create_rate_guide: "bg-teal-100 text-teal-800",
+  update_rate_guide: "bg-teal-100 text-teal-800",
+  delete_rate_guide: "bg-red-100 text-red-800",
+  bulk_replace_rate_guide: "bg-teal-100 text-teal-800",
+  create_investment: "bg-indigo-100 text-indigo-800",
+  approve_investment: "bg-emerald-100 text-emerald-800",
+  reject_investment: "bg-red-100 text-red-800",
 };
