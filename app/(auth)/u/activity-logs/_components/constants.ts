@@ -48,6 +48,14 @@ export const ACTION_GROUPS = [
       { value: "reject_investment", label: "Rejected Investment" },
     ],
   },
+  {
+    label: "Portfolio Asset Management",
+    actions: [
+      { value: "create_portfolio_asset", label: "Created Portfolio Asset" },
+      { value: "update_portfolio_asset", label: "Updated Portfolio Asset" },
+      { value: "delete_portfolio_asset", label: "Deleted Portfolio Asset" },
+    ],
+  },
 ];
 
 export const ACTION_LABELS: Record<string, string> = ACTION_GROUPS.flatMap(
@@ -76,4 +84,7 @@ export const ACTION_STYLES: Record<string, string> = {
   create_investment: "bg-indigo-100 text-indigo-800",
   approve_investment: "bg-emerald-100 text-emerald-800",
   reject_investment: "bg-red-100 text-red-800",
+  create_portfolio_asset: "bg-violet-100 text-violet-800",
+  update_portfolio_asset: "bg-violet-100 text-violet-800",
+  delete_portfolio_asset: "bg-red-100 text-red-800",
 };

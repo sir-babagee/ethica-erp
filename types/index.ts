@@ -34,3 +34,8 @@ export type {
   UpdateRateGuidePayload,
   BulkReplaceRateGuidesPayload,
 } from "./rate-guide";
+export type {
+  PortfolioAsset,
+  PortfolioAssetsResponse,
+  CreatePortfolioAssetPayload,
+} from "./portfolio-asset";

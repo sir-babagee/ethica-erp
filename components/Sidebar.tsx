@@ -22,6 +22,12 @@ const navItems = [
     permission: PERMISSIONS.RATE_GUIDE_MANAGE,
   },
   {
+    href: "/u/portfolio-assets",
+    label: "Portfolio Assets",
+    icon: PortfolioAssetsIcon,
+    permission: PERMISSIONS.PORTFOLIO_ASSETS_MANAGE,
+  },
+  {
     href: "/u/staff",
     label: "Staff",
     icon: UserGroupIcon,
@@ -180,6 +186,24 @@ function RateGuideIcon({ className }: { className?: string }) {
         strokeLinejoin="round"
         strokeWidth={2}
         d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"
+      />
+    </svg>
+  );
+}
+
+function PortfolioAssetsIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
       />
     </svg>
   );
