@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePortfolioAssets } from "@/services/portfolio-assets";
+import { useAuthStore } from "@/stores/authStore";
+import { PERMISSIONS } from "@/constants/roles";
 import { fmtCurrency } from "@/utils/formatters";
 
 function formatDate(dateStr: string): string {
@@ -15,6 +17,9 @@ function formatDate(dateStr: string): string {
 }
 
 export default function PortfolioAssetsPage() {
+  const permissions = useAuthStore((s) => s.permissions);
+  const canManage = permissions.includes(PERMISSIONS.PORTFOLIO_ASSETS_MANAGE);
+
   const [page, setPage] = useState(1);
   const { data, isLoading, error } = usePortfolioAssets(page, 20);
 
@@ -57,25 +62,27 @@ export default function PortfolioAssetsPage() {
           <h1 className="text-2xl font-bold text-gray-900">Portfolio Assets</h1>
           <p className="mt-1 text-gray-500">All portfolio asset entries</p>
         </div>
-        <Link
-          href="/u/portfolio-assets/new"
-          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white hover:bg-primary/90"
-        >
-          <svg
-            className="h-4 w-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+        {canManage && (
+          <Link
+            href="/u/portfolio-assets/new"
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white hover:bg-primary/90"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 4v16m8-8H4"
-            />
-          </svg>
-          New Portfolio Asset
-        </Link>
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 4v16m8-8H4"
+              />
+            </svg>
+            New Portfolio Asset
+          </Link>
+        )}
       </div>
 
       <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">

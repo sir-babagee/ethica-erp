@@ -13,37 +13,37 @@ const navItems = [
     href: "/u/transactions",
     label: "Transactions",
     icon: TransactionsIcon,
-    permission: PERMISSIONS.INVESTMENTS_VIEW,
+    permissions: [PERMISSIONS.INVESTMENTS_VIEW],
   },
   {
     href: "/u/rate-guide",
     label: "Rate Guide",
     icon: RateGuideIcon,
-    permission: PERMISSIONS.RATE_GUIDE_MANAGE,
+    permissions: [PERMISSIONS.RATE_GUIDE_VIEW, PERMISSIONS.RATE_GUIDE_MANAGE],
   },
   {
     href: "/u/portfolio-assets",
     label: "Portfolio Assets",
     icon: PortfolioAssetsIcon,
-    permission: PERMISSIONS.PORTFOLIO_ASSETS_MANAGE,
+    permissions: [PERMISSIONS.PORTFOLIO_ASSETS_VIEW, PERMISSIONS.PORTFOLIO_ASSETS_MANAGE],
   },
   {
     href: "/u/staff",
     label: "Staff",
     icon: UserGroupIcon,
-    permission: PERMISSIONS.STAFF_CREATE,
+    permissions: [PERMISSIONS.STAFF_CREATE],
   },
   {
     href: "/u/staff/add",
     label: "Add Staff",
     icon: UserPlusIcon,
-    permission: PERMISSIONS.STAFF_CREATE,
+    permissions: [PERMISSIONS.STAFF_CREATE],
   },
   {
     href: "/u/activity-logs",
     label: "Activity Logs",
     icon: ActivityLogsIcon,
-    permission: PERMISSIONS.ACTIVITY_LOGS_VIEW,
+    permissions: [PERMISSIONS.ACTIVITY_LOGS_VIEW],
   },
 ];
 
@@ -239,8 +239,8 @@ export function Sidebar() {
   const permissions = useAuthStore((s) => s.permissions);
 
   const filteredNav = navItems.filter((item) => {
-    if (item.permission) {
-      return permissions.includes(item.permission);
+    if (item.permissions && item.permissions.length > 0) {
+      return item.permissions.some((p) => permissions.includes(p));
     }
     return true;
   });
