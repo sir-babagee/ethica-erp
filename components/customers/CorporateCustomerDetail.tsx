@@ -92,6 +92,47 @@ function DetailRow({
   );
 }
 
+function DocViewer({
+  src,
+  label,
+}: {
+  src: string | null | undefined;
+  label: string;
+}) {
+  if (!src) return null;
+  const isPdf =
+    src.toLowerCase().endsWith(".pdf") ||
+    src.toLowerCase().includes("application/pdf");
+  if (isPdf) {
+    return (
+      <div>
+        <span className="mb-1 block text-xs font-medium text-gray-500">
+          {label}
+        </span>
+        <a
+          href={src}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 rounded border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-primary transition-colors hover:bg-gray-100"
+        >
+          <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM6 20V4h7v5h5v11H6z" />
+          </svg>
+          View PDF
+        </a>
+      </div>
+    );
+  }
+  return (
+    <ImageViewer
+      src={src}
+      alt={label}
+      label={label}
+      thumbnailClassName="h-24 w-32 rounded border border-gray-200 object-contain bg-white cursor-pointer transition-opacity hover:opacity-90"
+    />
+  );
+}
+
 function ChevronLeftIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -296,7 +337,62 @@ export default function CorporateCustomerDetail({
           <DetailRow label="Email" value={c.email} />
           <DetailRow label="Phone 1" value={c.phone1} />
           <DetailRow label="Phone 2" value={c.phone2} />
-          <DetailRow label="SCUML Reg No" value={c.scumlRegNo} />
+
+          {/* CAC Documents */}
+          <div className="rounded-lg border border-gray-100 bg-gray-50 p-4 space-y-3">
+            <h3 className="text-sm font-semibold text-gray-700">CAC Documents</h3>
+            <DetailRow
+              label="Documents merged"
+              value={c.cacMerged ? "Yes — single file" : "No — separate files"}
+            />
+            {c.cacMerged ? (
+              c.cacDocument && (
+                <div className="pt-1">
+                  <DocViewer src={c.cacDocument} label="CAC Document (Merged)" />
+                </div>
+              )
+            ) : (
+              <div className="flex flex-wrap gap-6 pt-1">
+                <DocViewer src={c.cacMemorandum} label="Memorandum of Association" />
+                <DocViewer src={c.cacCertificate} label="Certificate of Incorporation" />
+                <DocViewer src={c.cacStatusReport} label="CAC Status Report" />
+              </div>
+            )}
+          </div>
+
+          {/* Board Resolution */}
+          {c.boardResolution && (
+            <div>
+              <DocViewer src={c.boardResolution} label="Board Resolution" />
+            </div>
+          )}
+
+          {/* Company Utility Bill */}
+          {c.companyUtilityBill && (
+            <div>
+              <DocViewer src={c.companyUtilityBill} label="Utility Bill" />
+            </div>
+          )}
+
+          {/* SCUML */}
+          <DetailRow
+            label="Has SCUML"
+            value={
+              <span className={c.hasScuml ? "text-emerald-600" : "text-gray-500"}>
+                {c.hasScuml ? "Yes" : "No"}
+              </span>
+            }
+          />
+          {c.hasScuml && (
+            <>
+              <DetailRow label="SCUML Reg No" value={c.scumlRegNo} />
+              {c.scumlDocument && (
+                <div>
+                  <DocViewer src={c.scumlDocument} label="SCUML Document" />
+                </div>
+              )}
+            </>
+          )}
         </DetailSection>
 
         {c.ubos && c.ubos.length > 0 && (
@@ -351,17 +447,24 @@ export default function CorporateCustomerDetail({
                     <DetailRow label="Email" value={ubo.email} />
                     <DetailRow label="BVN" value={ubo.bvn} />
                     <DetailRow label="NIN" value={ubo.nin} />
+                    <DetailRow label="ID type" value={ubo.idType} />
                   </div>
-                  {ubo.signature && (
-                    <div className="mt-4">
+                  <div className="mt-4 flex flex-wrap gap-6">
+                    {ubo.idPhoto && (
+                      <DocViewer src={ubo.idPhoto} label="ID Photo" />
+                    )}
+                    {ubo.utilityBill && (
+                      <DocViewer src={ubo.utilityBill} label="Utility Bill" />
+                    )}
+                    {ubo.signature && (
                       <ImageViewer
                         src={ubo.signature}
                         alt={`Signature for UBO ${i + 1}`}
                         label="Signature"
                         thumbnailClassName="h-16 w-32 rounded border border-gray-200 object-contain bg-white cursor-pointer transition-opacity hover:opacity-90"
                       />
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -493,6 +596,8 @@ export default function CorporateCustomerDetail({
                         label="Class of signatory"
                         value={m.classOfSignatory}
                       />
+                      <DetailRow label="BVN" value={m.bvn} />
+                      <DetailRow label="ID type" value={m.idType} />
                     </div>
                     <div className="flex flex-wrap gap-4">
                       {m.passport && (
@@ -502,6 +607,9 @@ export default function CorporateCustomerDetail({
                           label="Passport"
                           thumbnailClassName="h-24 w-24 rounded border border-gray-200 object-cover cursor-pointer transition-opacity hover:opacity-90"
                         />
+                      )}
+                      {m.idCard && (
+                        <DocViewer src={m.idCard} label="ID Card" />
                       )}
                       {m.signature && (
                         <ImageViewer

@@ -13,31 +13,37 @@ const navItems = [
     href: "/u/transactions",
     label: "Transactions",
     icon: TransactionsIcon,
-    permission: PERMISSIONS.INVESTMENTS_VIEW,
+    permissions: [PERMISSIONS.INVESTMENTS_VIEW],
   },
   {
     href: "/u/rate-guide",
     label: "Rate Guide",
     icon: RateGuideIcon,
-    permission: PERMISSIONS.RATE_GUIDE_MANAGE,
+    permissions: [PERMISSIONS.RATE_GUIDE_VIEW, PERMISSIONS.RATE_GUIDE_MANAGE],
+  },
+  {
+    href: "/u/portfolio-assets",
+    label: "Portfolio Assets",
+    icon: PortfolioAssetsIcon,
+    permissions: [PERMISSIONS.PORTFOLIO_ASSETS_VIEW, PERMISSIONS.PORTFOLIO_ASSETS_MANAGE],
   },
   {
     href: "/u/staff",
     label: "Staff",
     icon: UserGroupIcon,
-    permission: PERMISSIONS.STAFF_CREATE,
+    permissions: [PERMISSIONS.STAFF_CREATE],
   },
   {
     href: "/u/staff/add",
     label: "Add Staff",
     icon: UserPlusIcon,
-    permission: PERMISSIONS.STAFF_CREATE,
+    permissions: [PERMISSIONS.STAFF_CREATE],
   },
   {
     href: "/u/activity-logs",
     label: "Activity Logs",
     icon: ActivityLogsIcon,
-    permission: PERMISSIONS.ACTIVITY_LOGS_VIEW,
+    permissions: [PERMISSIONS.ACTIVITY_LOGS_VIEW],
   },
 ];
 
@@ -185,6 +191,24 @@ function RateGuideIcon({ className }: { className?: string }) {
   );
 }
 
+function PortfolioAssetsIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+      />
+    </svg>
+  );
+}
+
 function SettingsIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -215,8 +239,8 @@ export function Sidebar() {
   const permissions = useAuthStore((s) => s.permissions);
 
   const filteredNav = navItems.filter((item) => {
-    if (item.permission) {
-      return permissions.includes(item.permission);
+    if (item.permissions && item.permissions.length > 0) {
+      return item.permissions.some((p) => permissions.includes(p));
     }
     return true;
   });

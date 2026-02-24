@@ -10,6 +10,8 @@ import {
   useBulkReplaceRateGuides,
   type RateGuide,
 } from "@/services/rate-guides";
+import { useAuthStore } from "@/stores/authStore";
+import { PERMISSIONS } from "@/constants/roles";
 import type { CreateRateGuidePayload } from "@/types";
 import { EMPTY_FORM, type FormState } from "./_components/form-config";
 import { RateGuideModal } from "./_components/RateGuideModal";
@@ -23,6 +25,9 @@ import { exportRateGuidesToXlsx, exportRateGuidesToCsv } from "@/utils/exportRat
 type ModalMode = { kind: "add" } | { kind: "edit"; guide: RateGuide };
 
 export default function RateGuidePage() {
+  const permissions = useAuthStore((s) => s.permissions);
+  const canManage = permissions.includes(PERMISSIONS.RATE_GUIDE_MANAGE);
+
   const { data: guides = [], isLoading, isError } = useRateGuides();
   const createMutation = useCreateRateGuide();
   const updateMutation = useUpdateRateGuide();
@@ -121,26 +126,30 @@ export default function RateGuidePage() {
         </div>
         <ActionsMenu
           actions={[
-            {
-              label: "Add New Entry",
-              description: "Manually enter a single rate band",
-              icon: (
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-              ),
-              onClick: () => setModal({ kind: "add" }),
-            },
-            {
-              label: "Import CSV / XLSX",
-              description: "Bulk replace all entries from a file",
-              icon: (
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                </svg>
-              ),
-              onClick: () => setShowImport(true),
-            },
+            ...(canManage
+              ? [
+                  {
+                    label: "Add New Entry",
+                    description: "Manually enter a single rate band",
+                    icon: (
+                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                    ),
+                    onClick: () => setModal({ kind: "add" }),
+                  },
+                  {
+                    label: "Import CSV / XLSX",
+                    description: "Bulk replace all entries from a file",
+                    icon: (
+                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                      </svg>
+                    ),
+                    onClick: () => setShowImport(true),
+                  },
+                ]
+              : []),
             {
               label: "Export as XLSX",
               description: "Download current entries as Excel",
@@ -200,7 +209,7 @@ export default function RateGuidePage() {
                     "AT Customer Ratio",
                     "Min Amount",
                     "Max Amount",
-                    "",
+                    ...(canManage ? [""] : []),
                   ].map((col, i) => (
                     <th
                       key={i}
@@ -216,7 +225,7 @@ export default function RateGuidePage() {
                   <SkeletonRows />
                 ) : guides.length === 0 ? (
                   <tr>
-                    <td colSpan={10} className="px-4 py-16 text-center">
+                    <td colSpan={canManage ? 10 : 9} className="px-4 py-16 text-center">
                       <div className="flex flex-col items-center gap-3">
                         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
                           <svg className="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -233,6 +242,7 @@ export default function RateGuidePage() {
                     <RateGuideRow
                       key={guide.id}
                       guide={guide}
+                      canManage={canManage}
                       onEdit={(g) => setModal({ kind: "edit", guide: g })}
                       onDelete={(g) => setDeleteTarget(g)}
                     />
@@ -274,7 +284,7 @@ export default function RateGuidePage() {
       )}
 
       {/* Bulk import */}
-      {showImport && (
+      {canManage && showImport && (
         <ImportModal
           existingCount={guides.length}
           onClose={() => setShowImport(false)}
