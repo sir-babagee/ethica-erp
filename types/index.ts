@@ -39,3 +39,17 @@ export type {
   PortfolioAssetsResponse,
   CreatePortfolioAssetPayload,
 } from "./portfolio-asset";
+export type {
+  AccountType,
+  CoaGroup,
+  CoaSubGroup,
+  CoaGroupFlat,
+  CoaSubGroupFlat,
+  CreateAccountGroupPayload,
+  CreateAccountSubGroupPayload,
+  AccountingTransaction,
+  AccountingTransactionsResponse,
+  CreateAccountingTransactionPayload,
+  GlEntry,
+  GlResult,
+} from "./finance";
