@@ -248,7 +248,7 @@ export default function PersonalCustomerDetail({ id }: PersonalCustomerDetailPro
           )}
         </DetailSection>
 
-        {(c.passportPhoto || c.idUpload || c.signature || c.idType) && (
+        {(c.passportPhoto || c.idUpload || c.signature || c.utilityBillUpload || c.idType) && (
           <DetailSection title="Documents & Identity">
             {c.passportPhoto && (
               <ImageViewer
@@ -266,6 +266,38 @@ export default function PersonalCustomerDetail({ id }: PersonalCustomerDetailPro
                 label="ID document"
                 thumbnailClassName="max-h-48 max-w-48 rounded-lg border border-gray-200 object-contain cursor-pointer transition-opacity hover:opacity-90"
               />
+            )}
+            {c.utilityBillUpload && typeof c.utilityBillUpload === "string" && (
+              (c.utilityBillUpload.toLowerCase().includes(".pdf") ||
+                c.utilityBillUpload.toLowerCase().includes("application/pdf")) ? (
+                <div>
+                  <span className="mb-1 block text-xs font-medium text-gray-500">
+                    Utility bill
+                  </span>
+                  <a
+                    href={c.utilityBillUpload}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-primary transition-colors hover:bg-gray-50 hover:border-primary/30"
+                  >
+                    <svg
+                      className="h-5 w-5"
+                      fill="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM6 20V4h7v5h5v11H6z" />
+                    </svg>
+                    View utility bill (PDF)
+                  </a>
+                </div>
+              ) : (
+                <ImageViewer
+                  src={c.utilityBillUpload}
+                  alt="Utility bill"
+                  label="Utility bill"
+                  thumbnailClassName="max-h-48 max-w-48 rounded-lg border border-gray-200 object-contain cursor-pointer transition-opacity hover:opacity-90"
+                />
+              )
             )}
             {c.signature && (
               <ImageViewer
