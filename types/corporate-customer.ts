@@ -16,6 +16,9 @@ export interface UBOData {
   email: string;
   bvn: string;
   nin: string;
+  idType: string;
+  idPhoto: string;
+  utilityBill: string;
   designation: string;
   shareholdingPercent: string;
   sourceOfWealth: string;
@@ -56,6 +59,9 @@ export interface AccountMandateData {
   name: string;
   signature: string;
   classOfSignatory: string;
+  idType: string;
+  idCard: string;
+  bvn: string;
 }
 
 export interface CorporateCustomer {
@@ -97,6 +103,15 @@ export interface CorporateCustomerDetail extends CorporateCustomer {
   tin: string;
   phone2: string | null;
   scumlRegNo: string | null;
+  cacMerged: boolean;
+  cacDocument: string | null;
+  cacMemorandum: string | null;
+  cacCertificate: string | null;
+  cacStatusReport: string | null;
+  boardResolution: string | null;
+  companyUtilityBill: string | null;
+  hasScuml: boolean;
+  scumlDocument: string | null;
   ubos: UBOData[];
   otherJurisdiction: string | null;
   usTaxId: string | null;

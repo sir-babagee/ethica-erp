@@ -24,5 +24,7 @@ export function formatAmountInputDisplay(raw: string): string {
 
 export function parseFormattedNumber(value: string): number {
   const cleaned = value.replace(/,/g, "");
-  return cleaned ? parseFloat(cleaned) : 0;
+  if (!cleaned) return 0;
+  const num = parseFloat(cleaned);
+  return Number.isFinite(num) ? num : 0;
 }

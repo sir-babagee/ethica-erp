@@ -1,7 +1,9 @@
 export const ROLES = {
   ADMIN: "admin",
+  OVERSEER: "overseer",
   CUSTOMER_SERVICE: "customer_service",
   FUND_ACCOUNTANT: "fund_accountant",
+  PORTFOLIO_MANAGER: "portfolio_manager",
   COMPLIANCE_OFFICER: "compliance_officer",
   CFO: "cfo",
   MD: "md",
@@ -9,8 +11,10 @@ export const ROLES = {
 } as const;
 
 export const CREATABLE_ROLES = [
+  { value: ROLES.OVERSEER, label: "Overseer" },
   { value: ROLES.CUSTOMER_SERVICE, label: "Customer Service" },
   { value: ROLES.FUND_ACCOUNTANT, label: "Fund Accountant" },
+  { value: ROLES.PORTFOLIO_MANAGER, label: "Portfolio Manager" },
   { value: ROLES.COMPLIANCE_OFFICER, label: "Compliance Officer" },
   { value: ROLES.CFO, label: "Chief Financial Officer" },
   { value: ROLES.MD, label: "MD" },
@@ -53,7 +57,10 @@ export const PERMISSIONS = {
   INVESTMENTS_VIEW: "investments:view",
   INVESTMENTS_CREATE: "investments:create",
   INVESTMENTS_APPROVE: "investments:approve",
+  RATE_GUIDE_VIEW: "rate_guide:view",
   RATE_GUIDE_MANAGE: "rate_guide:manage",
+  PORTFOLIO_ASSETS_VIEW: "portfolio_assets:view",
+  PORTFOLIO_ASSETS_MANAGE: "portfolio_assets:manage",
 } as const;
 
 /**
@@ -63,8 +70,10 @@ export const PERMISSIONS = {
  */
 export const ROLE_LABELS: Record<string, string> = {
   [ROLES.ADMIN]: "Admin",
+  [ROLES.OVERSEER]: "Overseer",
   [ROLES.CUSTOMER_SERVICE]: "Customer Service",
   [ROLES.FUND_ACCOUNTANT]: "Fund Accountant",
+  [ROLES.PORTFOLIO_MANAGER]: "Portfolio Manager",
   [ROLES.COMPLIANCE_OFFICER]: "Compliance Officer",
   [ROLES.CFO]: "Chief Financial Officer",
   [ROLES.MD]: "MD",
