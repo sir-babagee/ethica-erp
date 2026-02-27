@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import axios from "axios";
@@ -17,6 +17,8 @@ import ApproveCustomerModal from "@/components/Modals/ApproveCustomerModal";
 import RejectCustomerModal from "@/components/Modals/RejectCustomerModal";
 import EscalateCustomerModal from "@/components/Modals/EscalateCustomerModal";
 import ImageViewer from "@/components/ImageViewer";
+import { CorporateCustomerPDFTemplate } from "@/components/customers/CorporateCustomerPDFTemplate";
+import { exportToPdf } from "@/lib/pdfExport";
 import type {
   CorporateCustomerDetail as CorporateCustomerDetailType,
   UBOData,
@@ -164,7 +166,27 @@ export default function CorporateCustomerDetail({
   const [approveModalOpen, setApproveModalOpen] = useState(false);
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [escalateModalOpen, setEscalateModalOpen] = useState(false);
+  const [isPdfGenerating, setIsPdfGenerating] = useState(false);
+  const pdfRef = useRef<HTMLDivElement>(null);
   const { data: customer, isLoading, error } = useCorporateCustomer(id);
+
+  async function handleDownloadPDF() {
+    if (!pdfRef.current || !customer) return;
+    setIsPdfGenerating(true);
+    try {
+      const safeName = (customer.companyName ?? "corporate").replace(/[^a-zA-Z0-9-]/g, "-");
+      await exportToPdf(pdfRef.current, {
+        filename: `${safeName}-report.pdf`,
+        scale: 2,
+        maxPages: 10,
+      });
+      toast.success("PDF downloaded successfully");
+    } catch {
+      toast.error("Failed to generate PDF. Please try again.");
+    } finally {
+      setIsPdfGenerating(false);
+    }
+  }
   const approveMutation = useApproveCorporateCustomer(id);
   const rejectMutation = useRejectCorporateCustomer(id);
   const escalateMutation = useEscalateCorporateCustomer(id);
@@ -248,6 +270,54 @@ export default function CorporateCustomerDetail({
             </p>
           </div>
         </div>
+        <button
+          type="button"
+          onClick={handleDownloadPDF}
+          disabled={isPdfGenerating}
+          className="flex shrink-0 items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {isPdfGenerating ? (
+            <>
+              <svg
+                className="h-4 w-4 animate-spin"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                />
+              </svg>
+              Generating…
+            </>
+          ) : (
+            <>
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"
+                />
+              </svg>
+              Download PDF
+            </>
+          )}
+        </button>
       </div>
 
       <div className="space-y-6">
@@ -770,6 +840,8 @@ export default function CorporateCustomerDetail({
           isPending={escalateMutation.isPending}
         />
       </div>
+
+      <CorporateCustomerPDFTemplate customer={c} pdfRef={pdfRef} />
     </div>
   );
 }
