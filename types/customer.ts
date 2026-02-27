@@ -64,6 +64,7 @@ export interface CustomerDetail {
   passportPhoto: string | null;
   idType: string | null;
   idUpload: string | null;
+  utilityBillUpload?: string | null;
   title: string;
   firstName: string;
   lastName: string;

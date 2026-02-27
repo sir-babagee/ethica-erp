@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import axios from "axios";
@@ -15,6 +15,8 @@ import { PERMISSIONS } from "@/constants/roles";
 import ApproveCustomerModal from "@/components/Modals/ApproveCustomerModal";
 import EscalateCustomerModal from "@/components/Modals/EscalateCustomerModal";
 import ImageViewer from "@/components/ImageViewer";
+import { CustomerPDFTemplate } from "@/components/customers/CustomerPDFTemplate";
+import { exportToPdf } from "@/lib/pdfExport";
 import type { CustomerDetail, PEPData } from "@/types";
 
 function formatCurrency(amount: number | string): string {
@@ -35,6 +37,13 @@ function formatDate(dateStr: string | null | undefined): string {
     month: "long",
     year: "numeric",
   });
+}
+
+function formatSnakeCase(str: string): string {
+  return str
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
 }
 
 function StatusBadge({ status }: { status: string }) {
@@ -113,9 +122,30 @@ export default function PersonalCustomerDetail({ id }: PersonalCustomerDetailPro
   const permissions = useAuthStore((s) => s.permissions);
   const [approveModalOpen, setApproveModalOpen] = useState(false);
   const [escalateModalOpen, setEscalateModalOpen] = useState(false);
+  const [isPdfGenerating, setIsPdfGenerating] = useState(false);
+  const pdfRef = useRef<HTMLDivElement>(null);
   const { data: customer, isLoading, error } = useCustomer(id);
   const approveMutation = useApproveCustomer(id);
   const escalateMutation = useEscalateCustomer(id);
+
+  async function handleDownloadPDF() {
+    if (!pdfRef.current || !customer) return;
+    setIsPdfGenerating(true);
+    try {
+      const c = customer as CustomerDetail;
+      const safeName = [c.firstName, c.lastName].filter(Boolean).join("-");
+      await exportToPdf(pdfRef.current, {
+        filename: `${safeName || "customer"}-report.pdf`,
+        scale: 2,
+        fitOnSinglePage: true,
+      });
+      toast.success("PDF downloaded successfully");
+    } catch {
+      toast.error("Failed to generate PDF. Please try again.");
+    } finally {
+      setIsPdfGenerating(false);
+    }
+  }
 
   const canApprove =
     permissions.includes(PERMISSIONS.ONBOARDING_APPROVE) &&
@@ -197,6 +227,54 @@ export default function PersonalCustomerDetail({ id }: PersonalCustomerDetailPro
             </p>
           </div>
         </div>
+        <button
+          type="button"
+          onClick={handleDownloadPDF}
+          disabled={isPdfGenerating}
+          className="flex shrink-0 items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {isPdfGenerating ? (
+            <>
+              <svg
+                className="h-4 w-4 animate-spin"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                />
+              </svg>
+              Generating…
+            </>
+          ) : (
+            <>
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"
+                />
+              </svg>
+              Download PDF
+            </>
+          )}
+        </button>
       </div>
 
       <div className="space-y-6">
@@ -248,7 +326,7 @@ export default function PersonalCustomerDetail({ id }: PersonalCustomerDetailPro
           )}
         </DetailSection>
 
-        {(c.passportPhoto || c.idUpload || c.signature || c.idType) && (
+        {(c.passportPhoto || c.idUpload || c.signature || c.utilityBillUpload || c.idType) && (
           <DetailSection title="Documents & Identity">
             {c.passportPhoto && (
               <ImageViewer
@@ -266,6 +344,38 @@ export default function PersonalCustomerDetail({ id }: PersonalCustomerDetailPro
                 label="ID document"
                 thumbnailClassName="max-h-48 max-w-48 rounded-lg border border-gray-200 object-contain cursor-pointer transition-opacity hover:opacity-90"
               />
+            )}
+            {c.utilityBillUpload && typeof c.utilityBillUpload === "string" && (
+              (c.utilityBillUpload.toLowerCase().includes(".pdf") ||
+                c.utilityBillUpload.toLowerCase().includes("application/pdf")) ? (
+                <div>
+                  <span className="mb-1 block text-xs font-medium text-gray-500">
+                    Utility bill
+                  </span>
+                  <a
+                    href={c.utilityBillUpload}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-primary transition-colors hover:bg-gray-50 hover:border-primary/30"
+                  >
+                    <svg
+                      className="h-5 w-5"
+                      fill="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM6 20V4h7v5h5v11H6z" />
+                    </svg>
+                    View utility bill (PDF)
+                  </a>
+                </div>
+              ) : (
+                <ImageViewer
+                  src={c.utilityBillUpload}
+                  alt="Utility bill"
+                  label="Utility bill"
+                  thumbnailClassName="max-h-48 max-w-48 rounded-lg border border-gray-200 object-contain cursor-pointer transition-opacity hover:opacity-90"
+                />
+              )
             )}
             {c.signature && (
               <ImageViewer
@@ -390,7 +500,7 @@ export default function PersonalCustomerDetail({ id }: PersonalCustomerDetailPro
                         key={i}
                         className="rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary"
                       >
-                        {s}
+                        {formatSnakeCase(s)}
                       </li>
                     ))}
                   </ul>
@@ -401,10 +511,12 @@ export default function PersonalCustomerDetail({ id }: PersonalCustomerDetailPro
               Object.keys(c.sourceOfWealthDetails).length > 0 && (
                 <div className="mt-4 space-y-3 rounded-lg border border-gray-100 bg-gray-50 p-4">
                   {Object.entries(c.sourceOfWealthDetails).map(([key, val]) => {
-                    const label = key
-                      .replace(/([A-Z])/g, " $1")
-                      .trim()
-                      .replace(/^\w/, (s) => s.toUpperCase());
+                    const label = key.includes("_")
+                      ? formatSnakeCase(key)
+                      : key
+                          .replace(/([A-Z])/g, " $1")
+                          .trim()
+                          .replace(/^\w/, (s) => s.toUpperCase());
                     return <DetailRow key={key} label={label} value={val} />;
                   })}
                 </div>
@@ -516,6 +628,8 @@ export default function PersonalCustomerDetail({ id }: PersonalCustomerDetailPro
           isPending={escalateMutation.isPending}
         />
       </div>
+
+      <CustomerPDFTemplate customer={c} pdfRef={pdfRef} />
     </div>
   );
 }
