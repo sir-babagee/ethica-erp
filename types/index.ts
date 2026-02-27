@@ -52,4 +52,9 @@ export type {
   CreateAccountingTransactionPayload,
   GlEntry,
   GlResult,
+  CoaBalanceItem,
+  SubledgerBalance,
+  LedgerDetailResult,
+  TrialBalanceAccount,
+  TrialBalanceResult,
 } from "./finance";

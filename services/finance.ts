@@ -12,11 +12,15 @@ import type {
   AccountingTransactionsResponse,
   CreateAccountingTransactionPayload,
   GlResult,
+  CoaBalanceItem,
+  LedgerDetailResult,
+  TrialBalanceResult,
 } from "@/types";
 
 const COA_KEY = "finance-coa";
 const TX_KEY = "finance-transactions";
 const GL_KEY = "finance-gl";
+const TB_KEY = "finance-trial-balance";
 
 // ─── Chart of Accounts ────────────────────────────────────────────────────────
 
@@ -139,11 +143,55 @@ export function useCreateAccountingTransaction() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: [TX_KEY] });
       void queryClient.invalidateQueries({ queryKey: [GL_KEY] });
+      void queryClient.invalidateQueries({ queryKey: [TB_KEY] });
     },
   });
 }
 
 // ─── General Ledger ───────────────────────────────────────────────────────────
+
+export function useCoaBalances(dateFrom?: string, dateTo?: string) {
+  return useQuery({
+    queryKey: [GL_KEY, "coa-balances", dateFrom, dateTo],
+    queryFn: async () => {
+      const params: Record<string, string> = {};
+      if (dateFrom) params.dateFrom = dateFrom;
+      if (dateTo) params.dateTo = dateTo;
+      const res = await api.get<CoaBalanceItem[]>(
+        "/api/proxy/finance/gl/coa-balances",
+        { params }
+      );
+      return res.data;
+    },
+  });
+}
+
+export function useLedgerDetail(
+  account: string,
+  dateFrom?: string,
+  dateTo?: string,
+  page = 1,
+  limit = 50
+) {
+  return useQuery({
+    queryKey: [GL_KEY, "ledger", account, dateFrom, dateTo, page, limit],
+    queryFn: async () => {
+      const params: Record<string, string | number> = {
+        account,
+        page,
+        limit,
+      };
+      if (dateFrom) params.dateFrom = dateFrom;
+      if (dateTo) params.dateTo = dateTo;
+      const res = await api.get<LedgerDetailResult>(
+        "/api/proxy/finance/gl/ledger",
+        { params }
+      );
+      return res.data;
+    },
+    enabled: !!account,
+  });
+}
 
 export function useGl(
   account: string,
@@ -162,5 +210,21 @@ export function useGl(
       return res.data;
     },
     enabled: !!account,
+  });
+}
+
+// ─── Trial Balance ────────────────────────────────────────────────────────────
+
+export function useTrialBalance(asOfDate: string) {
+  return useQuery({
+    queryKey: [TB_KEY, asOfDate],
+    queryFn: async () => {
+      const res = await api.get<TrialBalanceResult>(
+        "/api/proxy/finance/trial-balance",
+        { params: { asOfDate } }
+      );
+      return res.data;
+    },
+    enabled: !!asOfDate,
   });
 }

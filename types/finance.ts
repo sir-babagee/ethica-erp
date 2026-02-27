@@ -92,3 +92,43 @@ export interface GlResult {
   totalCredit: number;
   balance: number;
 }
+
+export interface CoaBalanceItem {
+  code: number;
+  name: string;
+  accountType: AccountType;
+  balance: number;
+  isGroup: boolean;
+  groupCode?: number;
+}
+
+export interface SubledgerBalance {
+  code: number;
+  name: string;
+  balance: number;
+}
+
+export interface LedgerDetailResult extends GlResult {
+  subledgerBalances?: SubledgerBalance[];
+  directEntries: GlEntry[];
+}
+
+export interface TrialBalanceAccount {
+  code: number;
+  name: string;
+  accountType: AccountType;
+  debit: number;
+  credit: number;
+  balance: number;
+  isGroup: boolean;
+}
+
+export interface TrialBalanceResult {
+  asOfDate: string;
+  firstTransactionDate: string | null;
+  lastTransactionDate: string | null;
+  accountsByType: Record<string, TrialBalanceAccount[]>;
+  totalDebit: number;
+  totalCredit: number;
+  balances: boolean;
+}
