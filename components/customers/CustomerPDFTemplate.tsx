@@ -120,7 +120,7 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div style={sectionWrap}>
+    <div style={sectionWrap} data-pdf-section>
       <div style={sectionHead}>{title}</div>
       <div style={sectionBody}>{children}</div>
     </div>
