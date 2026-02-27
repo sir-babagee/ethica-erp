@@ -1,6 +1,7 @@
 /**
- * Exports an HTML element to PDF with section-aware page splitting.
- * Content is never cut mid-section; sections that would overflow are moved to the next page.
+ * Exports an HTML element to PDF.
+ * - fitOnSinglePage: scale content to fit on one A4 page
+ * - otherwise: section-aware page splitting (content never cut mid-section)
  */
 export async function exportToPdf(
   element: HTMLElement,
@@ -8,9 +9,10 @@ export async function exportToPdf(
     filename: string;
     scale?: number;
     maxPages?: number;
+    fitOnSinglePage?: boolean;
   }
 ): Promise<void> {
-  const { filename, scale = 2, maxPages = 10 } = options;
+  const { filename, scale = 2, maxPages = 10, fitOnSinglePage = false } = options;
 
   const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
     import("html2canvas"),
@@ -33,6 +35,17 @@ export async function exportToPdf(
   const pdfW = 210;
   const pdfPageH = 297;
   const imgH = (canvas.height * pdfW) / canvas.width;
+
+  if (fitOnSinglePage) {
+    const scaleFactor = imgH > pdfPageH ? pdfPageH / imgH : 1;
+    const finalW = pdfW * scaleFactor;
+    const finalH = imgH * scaleFactor;
+    const imgData = canvas.toDataURL("image/jpeg", 0.95);
+    pdf.addImage(imgData, "JPEG", 0, 0, finalW, finalH);
+    pdf.save(filename);
+    return;
+  }
+
   const pageHeightPx = (canvas.height * pdfPageH) / imgH;
 
   // Collect safe split points (tops and bottoms of sections)

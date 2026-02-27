@@ -16,6 +16,7 @@ import ApproveCustomerModal from "@/components/Modals/ApproveCustomerModal";
 import EscalateCustomerModal from "@/components/Modals/EscalateCustomerModal";
 import ImageViewer from "@/components/ImageViewer";
 import { CustomerPDFTemplate } from "@/components/customers/CustomerPDFTemplate";
+import { exportToPdf } from "@/lib/pdfExport";
 import type { CustomerDetail, PEPData } from "@/types";
 
 function formatCurrency(amount: number | string): string {
@@ -131,39 +132,13 @@ export default function PersonalCustomerDetail({ id }: PersonalCustomerDetailPro
     if (!pdfRef.current || !customer) return;
     setIsPdfGenerating(true);
     try {
-      const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
-        import("html2canvas"),
-        import("jspdf"),
-      ]);
-
-      const canvas = await html2canvas(pdfRef.current, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: false,
-        logging: false,
-        backgroundColor: "#f9fafb",
-        width: pdfRef.current.scrollWidth,
-        height: pdfRef.current.scrollHeight,
-        windowWidth: pdfRef.current.scrollWidth,
-      });
-
-      const imgData = canvas.toDataURL("image/jpeg", 0.95);
-      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-
-      const pdfW = 210;
-      const pdfPageH = 297;
-      const imgH = (canvas.height * pdfW) / canvas.width;
-
-      // Scale to fit on single page
-      const scale = imgH > pdfPageH ? pdfPageH / imgH : 1;
-      const finalW = pdfW * scale;
-      const finalH = imgH * scale;
-
-      pdf.addImage(imgData, "JPEG", 0, 0, finalW, finalH);
-
       const c = customer as CustomerDetail;
       const safeName = [c.firstName, c.lastName].filter(Boolean).join("-");
-      pdf.save(`${safeName || "customer"}-report.pdf`);
+      await exportToPdf(pdfRef.current, {
+        filename: `${safeName || "customer"}-report.pdf`,
+        scale: 2,
+        fitOnSinglePage: true,
+      });
       toast.success("PDF downloaded successfully");
     } catch {
       toast.error("Failed to generate PDF. Please try again.");
