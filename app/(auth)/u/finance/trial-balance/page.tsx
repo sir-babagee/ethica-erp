@@ -118,7 +118,9 @@ export default function TrialBalancePage() {
               </thead>
               <tbody className="divide-y divide-gray-200 bg-white">
                 {ACCOUNT_TYPE_ORDER.map((accountType) => {
-                  const accounts = tbData.accountsByType[accountType] ?? [];
+                  const accounts = (tbData.accountsByType[accountType] ?? []).filter(
+                    (acc) => acc.debit !== 0 || acc.credit !== 0
+                  );
                   if (accounts.length === 0) return null;
 
                   return (
@@ -179,7 +181,12 @@ export default function TrialBalancePage() {
             </table>
           </div>
 
-          {Object.keys(tbData.accountsByType).length === 0 && (
+          {!ACCOUNT_TYPE_ORDER.some(
+            (t) =>
+              (tbData.accountsByType[t] ?? []).filter(
+                (acc) => acc.debit !== 0 || acc.credit !== 0
+              ).length > 0
+          ) && (
             <div className="border-t border-gray-200 px-5 py-12 text-center text-gray-500">
               No chart of accounts configured, or no transactions as of this
               date.
