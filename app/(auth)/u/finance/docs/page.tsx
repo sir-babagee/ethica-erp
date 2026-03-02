@@ -96,6 +96,7 @@ const TOC_ITEMS = [
   { id: "journal-header", label: "↳ Header Fields" },
   { id: "journal-lines", label: "↳ Journal Lines" },
   { id: "approval", label: "Approving a Journal" },
+  { id: "hash-chain", label: "↳ Cryptographic Hash Chain" },
   { id: "general-ledger", label: "General Ledger" },
   { id: "trial-balance", label: "Trial Balance" },
   { id: "permissions", label: "Roles & Permissions" },
@@ -588,6 +589,208 @@ export default function FinanceDocsPage() {
               the same accounts and amounts but with DR and CR swapped.
             </Warning>
           </div>
+        </Section>
+
+        {/* HASH CHAIN */}
+        <Section id="hash-chain" title="Cryptographic Hash Chain">
+          <p>
+            Every journal entry carries two hash fields — <span className="font-mono text-sm font-medium text-gray-800">Previous Hash</span> and{" "}
+            <span className="font-mono text-sm font-medium text-gray-800">Current Hash</span> — visible at the bottom of any journal detail page
+            under the <strong>Cryptographic Hash Chain</strong> panel.
+            These are long strings of letters and numbers that may look
+            unfamiliar, but they serve a critical audit and compliance purpose.
+            No action is ever required from you — they are generated and
+            verified automatically by the system.
+          </p>
+
+          <div className="mt-4 space-y-4">
+
+            {/* What is a hash */}
+            <div className="rounded-lg border border-gray-200 bg-white p-4">
+              <p className="mb-2 font-semibold text-gray-900">
+                What is a hash?
+              </p>
+              <p className="text-gray-600">
+                A <strong>hash</strong> (specifically SHA-256, the same
+                algorithm used in banking and Bitcoin) is a mathematical
+                fingerprint. You feed it any piece of data — text, numbers, a
+                whole document — and it produces a fixed 64-character string.
+                The key properties are:
+              </p>
+              <ul className="mt-3 list-inside list-disc space-y-1.5 text-gray-600">
+                <li>
+                  <strong>Deterministic</strong> — the same input always
+                  produces the exact same output.
+                </li>
+                <li>
+                  <strong>Unique</strong> — even a single character change
+                  produces a completely different output. Changing{" "}
+                  <span className="font-mono text-xs">₦10,000,000</span> to{" "}
+                  <span className="font-mono text-xs">₦10,000,001</span>{" "}
+                  produces a totally different hash.
+                </li>
+                <li>
+                  <strong>One-way</strong> — you cannot reverse-engineer the
+                  original data from the hash. It is a fingerprint, not an
+                  encryption.
+                </li>
+              </ul>
+              <div className="mt-3 rounded-lg bg-gray-50 p-3 text-xs">
+                <p className="font-medium text-gray-500 mb-1">Example — SHA-256 of the word &quot;hello&quot;:</p>
+                <p className="font-mono break-all text-gray-700">
+                  2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824
+                </p>
+              </div>
+            </div>
+
+            {/* How the chain works */}
+            <div className="rounded-lg border border-gray-200 bg-white p-4">
+              <p className="mb-2 font-semibold text-gray-900">
+                How the chain works
+              </p>
+              <p className="text-gray-600">
+                When a journal is <strong>created</strong>, the system hashes
+                together the following pieces of its content:
+              </p>
+              <div className="mt-3 rounded-lg bg-gray-50 p-3 font-mono text-xs text-gray-700">
+                <p>reference + date + sourceModule + narration</p>
+                <p>+ all line accounts, amounts, currencies</p>
+                <p>+ creation timestamp</p>
+                <p>+ <span className="text-primary font-bold">previousHash</span> (the hash of the journal before this one)</p>
+                <p className="mt-2 border-t border-dashed border-gray-300 pt-2 font-bold text-gray-900">
+                  = currentHash (this journal&apos;s fingerprint)
+                </p>
+              </div>
+              <p className="mt-3 text-gray-600">
+                The result is stored as this journal&apos;s{" "}
+                <span className="font-mono text-sm font-medium">currentHash</span>.
+                The <em>next</em> journal to be created will then include{" "}
+                <em>this</em> hash as its own{" "}
+                <span className="font-mono text-sm font-medium">previousHash</span>.
+                This creates an unbroken chain: each journal is mathematically
+                locked to the one before it, all the way back to the very first
+                entry.
+              </p>
+              {/* Visual chain */}
+              <div className="mt-4 overflow-x-auto">
+                <div className="flex min-w-[520px] items-center gap-2">
+                  {[
+                    { ref: "JNL-001", label: "First journal", note: "previousHash = \"genesis\"", color: "border-gray-300 bg-gray-50" },
+                    { ref: "JNL-002", label: "Second journal", note: "previousHash = hash of JNL-001", color: "border-blue-200 bg-blue-50" },
+                    { ref: "JNL-003", label: "Third journal", note: "previousHash = hash of JNL-002", color: "border-purple-200 bg-purple-50" },
+                  ].map((node, i, arr) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <div className={`rounded-lg border p-3 text-center ${node.color}`} style={{ minWidth: 140 }}>
+                        <p className="font-mono text-xs font-bold text-gray-800">{node.ref}</p>
+                        <p className="mt-0.5 text-xs font-medium text-gray-700">{node.label}</p>
+                        <p className="mt-1 text-xs text-gray-500 leading-tight">{node.note}</p>
+                      </div>
+                      {i < arr.length - 1 && (
+                        <span className="text-lg font-bold text-gray-300">→</span>
+                      )}
+                    </div>
+                  ))}
+                  <span className="text-lg font-bold text-gray-300">→ …</span>
+                </div>
+              </div>
+            </div>
+
+            {/* The genesis journal */}
+            <div className="rounded-lg border border-gray-200 bg-white p-4">
+              <p className="mb-2 font-semibold text-gray-900">
+                The &quot;genesis&quot; entry
+              </p>
+              <p className="text-gray-600">
+                The very first journal ever created has no predecessor, so its{" "}
+                <span className="font-mono text-sm font-medium">previousHash</span>{" "}
+                shows as <span className="font-mono text-sm font-medium text-gray-700">genesis (first journal)</span>.
+                This is intentional and correct — it simply marks the
+                starting point of the chain, similar to how a blockchain has
+                a &quot;genesis block&quot;.
+              </p>
+            </div>
+
+            {/* Why it matters */}
+            <div className="rounded-lg border border-gray-200 bg-white p-4">
+              <p className="mb-2 font-semibold text-gray-900">
+                Why it matters — tamper evidence
+              </p>
+              <p className="text-gray-600">
+                The hash chain turns the journal ledger into a{" "}
+                <strong>tamper-evident, append-only record</strong>. Here is
+                what that means in practice:
+              </p>
+              <ul className="mt-3 list-inside list-disc space-y-2 text-gray-600">
+                <li>
+                  If anyone were to silently edit a historical journal — change
+                  an amount, swap an account, alter a date — that journal&apos;s
+                  content would no longer match its stored{" "}
+                  <span className="font-mono text-sm font-medium">currentHash</span>.
+                  The tampering is immediately detectable.
+                </li>
+                <li>
+                  Because every subsequent journal contains the previous
+                  journal&apos;s hash, a change to one old entry breaks the
+                  chain for <em>every</em> journal that came after it. There
+                  is no way to quietly patch history — every change propagates
+                  a visible break.
+                </li>
+                <li>
+                  This provides a cryptographic guarantee that the ledger you
+                  see today is exactly the ledger that was posted at the time,
+                  without any silent alterations.
+                </li>
+              </ul>
+            </div>
+
+            {/* What you see on the detail page */}
+            <div className="rounded-lg border border-gray-200 bg-white p-4">
+              <p className="mb-2 font-semibold text-gray-900">
+                What you see on the journal detail page
+              </p>
+              <p className="text-gray-600">
+                When you open any journal entry and expand the{" "}
+                <strong>Cryptographic Hash Chain</strong> panel at the bottom,
+                you will see:
+              </p>
+              <div className="mt-3 space-y-3">
+                <div className="rounded-lg bg-gray-50 p-3">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">Previous Hash</p>
+                  <p className="font-mono text-xs break-all text-gray-600">
+                    a3f5c2d8e1b047a9c3f62d1e5a8b0c4f2d7e9a1b3c5f7d2e4a6b8c0d1e3f5a7
+                  </p>
+                  <p className="mt-1.5 text-xs text-gray-500">
+                    The fingerprint of the journal immediately before this one.
+                    Connecting this journal to the chain.
+                  </p>
+                </div>
+                <div className="rounded-lg bg-gray-50 p-3">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">Current Hash</p>
+                  <p className="font-mono text-xs break-all text-gray-600">
+                    9b2e4f7d1c6a3e8b0d5f2a9c4e7b1d3f6a8c0e2b4d6f8a0c2e4b6d8f0a2c4e6
+                  </p>
+                  <p className="mt-1.5 text-xs text-gray-500">
+                    This journal&apos;s own fingerprint. The next journal
+                    will store this value as its <em>Previous Hash</em>.
+                  </p>
+                </div>
+              </div>
+              <p className="mt-3 text-gray-600">
+                These hashes are read-only. You never need to type, copy,
+                or do anything with them — they are there for auditors,
+                regulators, and the system&apos;s own integrity verification.
+              </p>
+            </div>
+
+          </div>
+
+          <Note>
+            The hash chain satisfies the <strong>immutable ledger</strong>{" "}
+            requirement under AAOIFI Governance Standard 6 (Audit and
+            Internal Control) and provides a verifiable audit trail suitable
+            for SEC Nigeria examination. Any discrepancy in the chain is
+            immediately reportable evidence of record tampering.
+          </Note>
         </Section>
 
         {/* GENERAL LEDGER */}
