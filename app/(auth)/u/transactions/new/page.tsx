@@ -8,6 +8,7 @@ import {
   useCreateInvestment,
   type CustomerSearchResult,
 } from "@/services/investments";
+import { useInvestmentAccountSettings } from "@/services/finance";
 import { useRateGuides } from "@/services/rate-guides";
 import {
   formatAmountInputDisplay,
@@ -92,6 +93,9 @@ export default function NewInvestmentPage() {
   );
 
   const { data: rateGuides = [] } = useRateGuides();
+  const { data: investmentSettings } = useInvestmentAccountSettings();
+  const accountsConfigured =
+    !!(investmentSettings?.debitSubGroup && investmentSettings?.creditSubGroup);
 
   const effectiveAmount = currentInvestmentAmount.trim()
     ? parseFormattedNumber(currentInvestmentAmount)
@@ -529,11 +533,34 @@ export default function NewInvestmentPage() {
               />
             )}
 
+            {/* Investment account mapping warning */}
+            {investmentSettings && !accountsConfigured && (
+              <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3">
+                <p className="text-sm font-medium text-red-800">
+                  Investment account mapping is not configured.
+                </p>
+                <p className="mt-0.5 text-sm text-red-700">
+                  A COA manager must designate a{" "}
+                  <strong>Custodian Account (DR)</strong> and a{" "}
+                  <strong>Customer Liabilities Account (CR)</strong> in the{" "}
+                  <a
+                    href="/u/finance/chart-of-accounts"
+                    className="underline hover:text-red-900"
+                  >
+                    Chart of Accounts
+                  </a>{" "}
+                  before investments can be entered.
+                </p>
+              </div>
+            )}
+
             <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
               <p className="text-sm text-amber-800">
                 <strong>Note:</strong> This entry will be saved as{" "}
                 <strong>Pending</strong> and must be reviewed and approved by
-                the Chief Financial Officer before it becomes active.
+                the Chief Financial Officer before it becomes active. Approval
+                will automatically post the corresponding journal entry to the
+                books.
               </p>
             </div>
 
@@ -547,7 +574,16 @@ export default function NewInvestmentPage() {
               </button>
               <button
                 type="submit"
-                disabled={createMutation.isPending || showSubmitConfirm}
+                disabled={
+                  createMutation.isPending ||
+                  showSubmitConfirm ||
+                  !accountsConfigured
+                }
+                title={
+                  !accountsConfigured
+                    ? "Configure investment accounts in the Chart of Accounts first"
+                    : undefined
+                }
                 className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {createMutation.isPending ? (

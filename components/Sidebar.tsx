@@ -1,79 +1,67 @@
 "use client";
 
+import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
 import { PERMISSIONS, ROLE_LABELS } from "@/constants/roles";
 
-const navItems = [
-  { href: "/u/dashboard", label: "Dashboard", icon: DashboardIcon },
-  { href: "/u/customers", label: "Customers", icon: UsersIcon },
+type NavItem = {
+  href: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  permissions?: readonly string[];
+};
+
+const navGroups: { id: string; label: string; icon: React.ComponentType<{ className?: string }>; items: NavItem[] }[] = [
   {
-    href: "/u/transactions",
-    label: "Transactions",
+    id: "core",
+    label: "Core",
+    icon: DashboardIcon,
+    items: [
+      { href: "/u/dashboard", label: "Dashboard", icon: DashboardIcon },
+      { href: "/u/customers", label: "Customers", icon: UsersIcon },
+    ],
+  },
+  {
+    id: "investments",
+    label: "Investments",
     icon: TransactionsIcon,
-    permissions: [PERMISSIONS.INVESTMENTS_VIEW],
+    items: [
+      { href: "/u/transactions", label: "Transactions", icon: TransactionsIcon, permissions: [PERMISSIONS.INVESTMENTS_VIEW] },
+      { href: "/u/rate-guide", label: "Rate Guide", icon: RateGuideIcon, permissions: [PERMISSIONS.RATE_GUIDE_VIEW, PERMISSIONS.RATE_GUIDE_MANAGE] },
+      { href: "/u/portfolio-assets", label: "Portfolio Assets", icon: PortfolioAssetsIcon, permissions: [PERMISSIONS.PORTFOLIO_ASSETS_VIEW, PERMISSIONS.PORTFOLIO_ASSETS_MANAGE] },
+    ],
   },
   {
-    href: "/u/rate-guide",
-    label: "Rate Guide",
-    icon: RateGuideIcon,
-    permissions: [PERMISSIONS.RATE_GUIDE_VIEW, PERMISSIONS.RATE_GUIDE_MANAGE],
-  },
-  {
-    href: "/u/portfolio-assets",
-    label: "Portfolio Assets",
-    icon: PortfolioAssetsIcon,
-    permissions: [PERMISSIONS.PORTFOLIO_ASSETS_VIEW, PERMISSIONS.PORTFOLIO_ASSETS_MANAGE],
-  },
-  {
-    href: "/u/finance/chart-of-accounts",
-    label: "Chart of Accounts",
-    icon: ChartOfAccountsIcon,
-    permissions: [PERMISSIONS.FINANCE_VIEW, PERMISSIONS.FINANCE_MANAGE, PERMISSIONS.FINANCE_COA_MANAGE],
-  },
-  {
-    href: "/u/finance/accounting-transactions",
-    label: "Accounting",
-    icon: AccountingIcon,
-    permissions: [PERMISSIONS.FINANCE_VIEW, PERMISSIONS.FINANCE_MANAGE, PERMISSIONS.FINANCE_COA_MANAGE],
-  },
-  {
-    href: "/u/finance/gl",
-    label: "General Ledger",
+    id: "finance",
+    label: "Finance",
     icon: LedgerIcon,
-    permissions: [PERMISSIONS.FINANCE_VIEW, PERMISSIONS.FINANCE_MANAGE, PERMISSIONS.FINANCE_COA_MANAGE],
+    items: [
+      { href: "/u/finance/chart-of-accounts", label: "Chart of Accounts", icon: ChartOfAccountsIcon, permissions: [PERMISSIONS.FINANCE_VIEW, PERMISSIONS.FINANCE_MANAGE, PERMISSIONS.FINANCE_COA_MANAGE] },
+      { href: "/u/finance/accounting-transactions", label: "Accounting", icon: AccountingIcon, permissions: [PERMISSIONS.FINANCE_VIEW, PERMISSIONS.FINANCE_MANAGE, PERMISSIONS.FINANCE_COA_MANAGE] },
+      { href: "/u/finance/gl", label: "General Ledger", icon: LedgerIcon, permissions: [PERMISSIONS.FINANCE_VIEW, PERMISSIONS.FINANCE_MANAGE, PERMISSIONS.FINANCE_COA_MANAGE] },
+      { href: "/u/finance/trial-balance", label: "Trial Balance", icon: TrialBalanceIcon, permissions: [PERMISSIONS.FINANCE_VIEW, PERMISSIONS.FINANCE_MANAGE, PERMISSIONS.FINANCE_COA_MANAGE] },
+      { href: "/u/finance/docs", label: "Finance Guide", icon: FinanceGuideIcon, permissions: [PERMISSIONS.FINANCE_VIEW] },
+    ],
   },
   {
-    href: "/u/finance/trial-balance",
-    label: "Trial Balance",
-    icon: TrialBalanceIcon,
-    permissions: [PERMISSIONS.FINANCE_VIEW, PERMISSIONS.FINANCE_MANAGE, PERMISSIONS.FINANCE_COA_MANAGE],
-  },
-  {
-    href: "/u/finance/docs",
-    label: "Finance Guide",
-    icon: FinanceGuideIcon,
-    permissions: [PERMISSIONS.FINANCE_VIEW],
-  },
-  {
-    href: "/u/staff",
-    label: "Staff",
+    id: "people",
+    label: "People",
     icon: UserGroupIcon,
-    permissions: [PERMISSIONS.STAFF_CREATE],
+    items: [
+      { href: "/u/staff", label: "Staff", icon: UserGroupIcon, permissions: [PERMISSIONS.STAFF_CREATE] },
+      { href: "/u/staff/add", label: "Add Staff", icon: UserPlusIcon, permissions: [PERMISSIONS.STAFF_CREATE] },
+    ],
   },
   {
-    href: "/u/staff/add",
-    label: "Add Staff",
-    icon: UserPlusIcon,
-    permissions: [PERMISSIONS.STAFF_CREATE],
-  },
-  {
-    href: "/u/activity-logs",
-    label: "Activity Logs",
+    id: "system",
+    label: "System",
     icon: ActivityLogsIcon,
-    permissions: [PERMISSIONS.ACTIVITY_LOGS_VIEW],
+    items: [
+      { href: "/u/activity-logs", label: "Activity Logs", icon: ActivityLogsIcon, permissions: [PERMISSIONS.ACTIVITY_LOGS_VIEW] },
+    ],
   },
 ];
 
@@ -353,17 +341,62 @@ function SettingsIcon({ className }: { className?: string }) {
   );
 }
 
+function ChevronDownIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M19 9l-7 7-7-7"
+      />
+    </svg>
+  );
+}
+
 export function Sidebar() {
   const pathname = usePathname();
   const user = useAuthStore((s) => s.user);
   const permissions = useAuthStore((s) => s.permissions);
 
-  const filteredNav = navItems.filter((item) => {
-    if (item.permissions && item.permissions.length > 0) {
-      return item.permissions.some((p) => permissions.includes(p));
-    }
-    return true;
-  });
+  const filteredGroups = useMemo(
+    () =>
+      navGroups
+        .map((group) => ({
+          ...group,
+          items: group.items.filter((item) => {
+            if (item.permissions && item.permissions.length > 0) {
+              return item.permissions.some((p) => permissions.includes(p));
+            }
+            return true;
+          }),
+        }))
+        .filter((group) => group.items.length > 0),
+    [permissions]
+  );
+
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const group = filteredGroups.find((g) =>
+      g.items.some(
+        (item) =>
+          pathname === item.href ||
+          (pathname.startsWith(`${item.href}/`) &&
+            !g.items.some((o) => o.href !== item.href && pathname === o.href))
+      )
+    );
+    if (group) setExpandedId(group.id);
+  }, [pathname, filteredGroups]);
+
+  const toggleGroup = (id: string) => {
+    setExpandedId((prev) => (prev === id ? null : id));
+  };
 
   return (
     <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r border-gray-200 bg-white shadow-sm">
@@ -383,27 +416,67 @@ export function Sidebar() {
         </div>
 
         <nav className="flex-1 space-y-0.5 overflow-y-auto p-4">
-          {filteredNav.map((item) => {
-            const isActive =
-              pathname === item.href ||
-              (pathname.startsWith(`${item.href}/`) &&
-                !navItems.some(
-                  (other) => other.href !== item.href && pathname === other.href
-                ));
-            const Icon = item.icon;
+          {filteredGroups.map((group) => {
+            const isExpanded = expandedId === group.id;
+            const GroupIcon = group.icon;
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                  isActive
-                    ? "bg-primary/10 text-primary"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+              <div
+                key={group.id}
+                className={`rounded-lg transition-colors duration-200 ${
+                  isExpanded ? "bg-gray-50/60" : ""
                 }`}
               >
-                <Icon className="h-5 w-5 shrink-0" />
-                {item.label}
-              </Link>
+                <button
+                  type="button"
+                  onClick={() => toggleGroup(group.id)}
+                  className="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 hover:text-gray-900"
+                >
+                  <div className="flex min-w-0 flex-1 items-center gap-3">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center">
+                      <GroupIcon className="h-5 w-5" />
+                    </span>
+                    <span className="truncate">{group.label}</span>
+                  </div>
+                  <ChevronDownIcon
+                    className={`h-4 w-4 shrink-0 transition-transform duration-200 ease-out ${
+                      isExpanded ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+                <div
+                  className={`grid transition-[grid-template-rows] duration-200 ease-out ${
+                    isExpanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                  }`}
+                >
+                  <div className="min-h-0 overflow-hidden">
+                    <div className="space-y-0.5 border-l-2 border-gray-100 pl-3 pt-1 pb-2 ml-6">
+                      {group.items.map((item) => {
+                        const isActive =
+                          pathname === item.href ||
+                          (pathname.startsWith(`${item.href}/`) &&
+                            !group.items.some(
+                              (o) => o.href !== item.href && pathname === o.href
+                            ));
+                        const Icon = item.icon;
+                        return (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                              isActive
+                                ? "bg-primary/10 text-primary"
+                                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                            }`}
+                          >
+                            <Icon className="h-4 w-4 shrink-0" />
+                            {item.label}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </div>
             );
           })}
         </nav>

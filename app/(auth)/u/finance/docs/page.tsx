@@ -92,6 +92,7 @@ const TOC_ITEMS = [
   { id: "overview", label: "Overview" },
   { id: "how-it-flows", label: "How It All Flows" },
   { id: "chart-of-accounts", label: "Chart of Accounts" },
+  { id: "investment-mapping", label: "↳ Investment Account Mapping" },
   { id: "journal-entries", label: "Journal Entries" },
   { id: "journal-header", label: "↳ Header Fields" },
   { id: "journal-lines", label: "↳ Journal Lines" },
@@ -284,6 +285,20 @@ export default function FinanceDocsPage() {
             <strong> after it has been approved and posted</strong>. Saving a
             journal as Pending does not affect any balances.
           </Warning>
+
+          <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+            <p className="mb-2 font-semibold text-emerald-900">
+              Investments → automatic journals
+            </p>
+            <p className="text-sm text-emerald-800">
+              When a Mudarabah Fund investment is <strong>approved</strong>, the
+              system automatically skips to step 3 — it creates and immediately
+              posts the journal on your behalf (DR Custodian, CR Customer
+              Liabilities). You do not need to create a manual journal for
+              investment inflows; this is handled entirely by the approval
+              workflow.
+            </p>
+          </div>
         </Section>
 
         {/* CHART OF ACCOUNTS */}
@@ -386,6 +401,151 @@ export default function FinanceDocsPage() {
             and fund accountant) can create new groups and sub-groups. All
             account codes are globally unique — the same code cannot be used as
             both a group and a sub-group.
+          </Note>
+        </Section>
+
+        {/* INVESTMENT ACCOUNT MAPPING */}
+        <Section id="investment-mapping" title="Investment Account Mapping">
+          <p>
+            The finance module integrates directly with the Investments module.
+            When an investment is <strong>approved</strong> by a CFO, MD, or
+            Admin, the system automatically creates and posts a double-entry
+            journal in the books — no manual entry required.
+          </p>
+
+          <div className="mt-4 rounded-lg border border-gray-200 bg-white p-4">
+            <p className="mb-3 font-semibold text-gray-900">
+              What gets posted on approval
+            </p>
+            <div className="rounded-lg bg-gray-50 p-4 font-mono text-sm">
+              <div className="grid grid-cols-[1fr_auto_auto] gap-x-6">
+                <span className="font-semibold text-gray-400">Account</span>
+                <span className="font-semibold text-gray-400">DR</span>
+                <span className="font-semibold text-gray-400">CR</span>
+                <span className="text-blue-700">Custodian Account (Asset)</span>
+                <span className="font-medium text-blue-700">Investment Amount</span>
+                <span className="text-gray-300">—</span>
+                <span className="text-rose-700">Customer Liabilities Account (Liability)</span>
+                <span className="text-gray-300">—</span>
+                <span className="font-medium text-rose-700">Investment Amount</span>
+              </div>
+            </div>
+            <p className="mt-3 text-sm text-gray-600">
+              The journal is tagged <strong>Source: Subscription</strong>, uses
+              the investment start date, links the{" "}
+              <strong>Client ID</strong> to the investor, and carries the
+              investment reference in the narration. It appears immediately in
+              the GL and Trial Balance with no further action required.
+            </p>
+          </div>
+
+          <div className="mt-4 space-y-4">
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+              <p className="mb-2 font-semibold text-amber-900">
+                Prerequisite: designate both accounts first
+              </p>
+              <p className="text-sm text-amber-800">
+                Before any investment entry can be submitted, a COA manager
+                must designate exactly one sub-group as the{" "}
+                <strong>Custodian Account (DR)</strong> and one as the{" "}
+                <strong>Customer Liabilities Account (CR)</strong>. Until both
+                are set, the Submit button on the new investment form is
+                disabled.
+              </p>
+            </div>
+
+            <div className="rounded-lg border border-gray-200 bg-white p-4">
+              <p className="mb-3 font-semibold text-gray-900">
+                How to set up the accounts
+              </p>
+              <div className="space-y-3">
+                <Step number={1} title="Go to Chart of Accounts">
+                  Open the Chart of Accounts page from the Finance section of
+                  the sidebar.
+                </Step>
+                <Step number={2} title="Find the Investment Account Mapping panel">
+                  At the top of the page, above the account tree, you will see
+                  the <strong>Investment Account Mapping</strong> panel. It
+                  shows the current status — amber if not configured, green
+                  once both accounts are set.
+                </Step>
+                <Step number={3} title='Click "Designate account" under DR'>
+                  A dropdown will appear showing all sub-groups under{" "}
+                  <strong>Asset groups only</strong>. Select the sub-group that
+                  represents the Custodian Account where incoming investment
+                  funds are held (e.g. Cash at Bank — Client Settlement). Click{" "}
+                  <strong>Confirm</strong>.
+                </Step>
+                <Step number={4} title='Click "Designate account" under CR'>
+                  A dropdown will appear showing all sub-groups under{" "}
+                  <strong>Liability groups only</strong>. Select the sub-group
+                  that represents the Customer Liabilities Account (the
+                  obligation owed to the investor). Click{" "}
+                  <strong>Confirm</strong>.
+                </Step>
+                <Step number={5} title="The panel turns green">
+                  Once both accounts are designated, the panel shows the green{" "}
+                  <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800">
+                    Configured
+                  </span>{" "}
+                  badge. Investment entries can now be submitted and the auto-journal
+                  will fire on approval.
+                </Step>
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-gray-200 bg-white p-4">
+              <p className="mb-2 font-semibold text-gray-900">
+                Validation rules
+              </p>
+              <ul className="list-inside list-disc space-y-1.5 text-sm text-gray-600">
+                <li>
+                  The <strong>debit account</strong> must belong to an{" "}
+                  <strong>Asset</strong> group. Trying to designate a liability
+                  or equity sub-group will be rejected.
+                </li>
+                <li>
+                  The <strong>credit account</strong> must belong to a{" "}
+                  <strong>Liability</strong> group. Trying to designate an
+                  asset or equity sub-group will be rejected.
+                </li>
+                <li>
+                  You can change the designation at any time — setting a new
+                  account automatically removes the flag from the previous one.
+                  This change only affects future investment approvals; already
+                  posted journals are never modified.
+                </li>
+                <li>
+                  The auto-journal is created as <strong>Posted</strong>{" "}
+                  immediately. The investment approval itself serves as the
+                  authorisation. No separate Finance Approve step is needed for
+                  it.
+                </li>
+              </ul>
+            </div>
+
+            <div className="rounded-lg border border-gray-200 bg-white p-4">
+              <p className="mb-2 font-semibold text-gray-900">
+                Viewing the auto-posted journal
+              </p>
+              <p className="text-sm text-gray-600">
+                After approving an investment, go to the{" "}
+                <strong>Accounting</strong> page (Journal Entries) and filter
+                by <strong>Source: Subscription</strong>. You will find the
+                auto-generated journal referencing the investment. Open it to
+                see the full double-entry lines, the hash chain fingerprint,
+                and the linked client ID. The same entries appear in the{" "}
+                <strong>General Ledger</strong> under the designated Custodian
+                Account and Customer Liabilities Account.
+              </p>
+            </div>
+          </div>
+
+          <Note>
+            Only staff with the <strong>COA Manage</strong> permission can
+            designate or change the investment accounts. All{" "}
+            <strong>Finance View</strong> holders can see the current mapping
+            but cannot edit it.
           </Note>
         </Section>
 
@@ -932,13 +1092,13 @@ export default function FinanceDocsPage() {
                   {
                     perm: "Finance COA Manage",
                     allows:
-                      "Create and manage Chart of Account groups and sub-groups",
+                      "Create and manage Chart of Account groups and sub-groups; designate the investment debit and credit accounts",
                     who: "Admin, Fund Accountant",
                   },
                   {
                     perm: "Finance Approve",
                     allows:
-                      "Approve and post Pending journals to the GL",
+                      "Approve and post Pending journals to the GL; approve investments (which auto-posts the subscription journal)",
                     who: "Admin, CFO, MD",
                   },
                 ].map((row) => (

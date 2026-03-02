@@ -6,8 +6,10 @@ import type {
   CoaGroup,
   CoaGroupFlat,
   CoaSubGroupFlat,
+  InvestmentAccountSettings,
   CreateAccountGroupPayload,
   CreateAccountSubGroupPayload,
+  UpdateAccountNamePayload,
   JournalEntry,
   JournalEntriesResponse,
   CreateJournalEntryPayload,
@@ -18,6 +20,7 @@ import type {
 } from "@/types";
 
 const COA_KEY = "finance-coa";
+const INV_SETTINGS_KEY = "finance-investment-settings";
 const JOURNAL_KEY = "finance-journals";
 const GL_KEY = "finance-gl";
 const TB_KEY = "finance-trial-balance";
@@ -87,6 +90,86 @@ export function useCreateAccountSubGroup() {
         )
         .then((r) => r.data),
     onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: [COA_KEY] });
+    },
+  });
+}
+
+export function useUpdateAccountGroupName() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ code, payload }: { code: number; payload: UpdateAccountNamePayload }) =>
+      api
+        .patch<CoaGroupFlat>(
+          `/api/proxy/finance/chart-of-accounts/groups/${code}`,
+          payload
+        )
+        .then((r) => r.data),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: [COA_KEY] });
+    },
+  });
+}
+
+export function useUpdateAccountSubGroupName() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ code, payload }: { code: number; payload: UpdateAccountNamePayload }) =>
+      api
+        .patch<CoaSubGroupFlat>(
+          `/api/proxy/finance/chart-of-accounts/subgroups/${code}`,
+          payload
+        )
+        .then((r) => r.data),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: [COA_KEY] });
+    },
+  });
+}
+
+// ─── Investment Account Settings ──────────────────────────────────────────────
+
+export function useInvestmentAccountSettings() {
+  return useQuery({
+    queryKey: [INV_SETTINGS_KEY],
+    queryFn: async () => {
+      const res = await api.get<InvestmentAccountSettings>(
+        "/api/proxy/finance/chart-of-accounts/investment-settings"
+      );
+      return res.data;
+    },
+  });
+}
+
+export function useSetInvestmentDebitAccount() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (code: number) =>
+      api
+        .patch<InvestmentAccountSettings>(
+          "/api/proxy/finance/chart-of-accounts/investment-debit-account",
+          { code }
+        )
+        .then((r) => r.data),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: [INV_SETTINGS_KEY] });
+      void queryClient.invalidateQueries({ queryKey: [COA_KEY] });
+    },
+  });
+}
+
+export function useSetInvestmentCreditAccount() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (code: number) =>
+      api
+        .patch<InvestmentAccountSettings>(
+          "/api/proxy/finance/chart-of-accounts/investment-credit-account",
+          { code }
+        )
+        .then((r) => r.data),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: [INV_SETTINGS_KEY] });
       void queryClient.invalidateQueries({ queryKey: [COA_KEY] });
     },
   });

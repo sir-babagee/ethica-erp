@@ -28,6 +28,8 @@ export interface CoaSubGroup {
   id: string;
   code: number;
   name: string;
+  isInvestmentDebitAccount: boolean;
+  isInvestmentCreditAccount: boolean;
 }
 
 export interface CoaGroup {
@@ -53,8 +55,22 @@ export interface CoaSubGroupFlat {
   code: number;
   name: string;
   groupCode: number;
+  isInvestmentDebitAccount: boolean;
+  isInvestmentCreditAccount: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface InvestmentAccountSubGroup {
+  id: string;
+  code: number;
+  name: string;
+  groupCode: number;
+}
+
+export interface InvestmentAccountSettings {
+  debitSubGroup: InvestmentAccountSubGroup | null;
+  creditSubGroup: InvestmentAccountSubGroup | null;
 }
 
 export interface CreateAccountGroupPayload {
@@ -65,6 +81,10 @@ export interface CreateAccountGroupPayload {
 
 export interface CreateAccountSubGroupPayload {
   code: number;
+  name: string;
+}
+
+export interface UpdateAccountNamePayload {
   name: string;
 }
 

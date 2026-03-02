@@ -7,6 +7,11 @@ import {
   useChartOfAccounts,
   useCreateAccountGroup,
   useCreateAccountSubGroup,
+  useUpdateAccountGroupName,
+  useUpdateAccountSubGroupName,
+  useInvestmentAccountSettings,
+  useSetInvestmentDebitAccount,
+  useSetInvestmentCreditAccount,
 } from "@/services/finance";
 import type {
   AccountType,
@@ -14,6 +19,7 @@ import type {
   CreateAccountGroupPayload,
   CreateAccountSubGroupPayload,
 } from "@/types";
+import toast from "react-hot-toast";
 
 const ACCOUNT_TYPE_LABELS: Record<AccountType, string> = {
   asset: "Asset",
@@ -418,6 +424,282 @@ function CreateSubGroupModal({
   );
 }
 
+// ─── Investment Account Setup Panel ──────────────────────────────────────────
+
+function InvestmentAccountSetupPanel({
+  groups,
+  canManage,
+}: {
+  groups: CoaGroup[];
+  canManage: boolean;
+}) {
+  const { data: settings, isLoading: settingsLoading } =
+    useInvestmentAccountSettings();
+  const debitMutation = useSetInvestmentDebitAccount();
+  const creditMutation = useSetInvestmentCreditAccount();
+
+  const [selectingDebit, setSelectingDebit] = useState(false);
+  const [selectingCredit, setSelectingCredit] = useState(false);
+  const [selectedDebitCode, setSelectedDebitCode] = useState<number | "">("");
+  const [selectedCreditCode, setSelectedCreditCode] = useState<number | "">("");
+
+  // Filter sub-groups by account type for each picker
+  const assetSubGroups = groups
+    .filter((g) => g.accountType === "asset")
+    .flatMap((g) => g.subGroups.map((s) => ({ ...s, groupName: g.name })));
+  const liabilitySubGroups = groups
+    .filter((g) => g.accountType === "liability")
+    .flatMap((g) => g.subGroups.map((s) => ({ ...s, groupName: g.name })));
+
+  async function handleSetDebit() {
+    if (!selectedDebitCode) return;
+    try {
+      await debitMutation.mutateAsync(Number(selectedDebitCode));
+      toast.success("Custodian (debit) account updated.");
+      setSelectingDebit(false);
+      setSelectedDebitCode("");
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message ?? "Failed to set debit account";
+      toast.error(Array.isArray(msg) ? msg.join(", ") : msg);
+    }
+  }
+
+  async function handleSetCredit() {
+    if (!selectedCreditCode) return;
+    try {
+      await creditMutation.mutateAsync(Number(selectedCreditCode));
+      toast.success("Customer liabilities (credit) account updated.");
+      setSelectingCredit(false);
+      setSelectedCreditCode("");
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message ?? "Failed to set credit account";
+      toast.error(Array.isArray(msg) ? msg.join(", ") : msg);
+    }
+  }
+
+  const isConfigured = !!(settings?.debitSubGroup && settings?.creditSubGroup);
+
+  return (
+    <div
+      className={`rounded-xl border ${
+        isConfigured
+          ? "border-emerald-200 bg-emerald-50"
+          : "border-amber-200 bg-amber-50"
+      } p-5`}
+    >
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div>
+          <h2 className="text-base font-semibold text-gray-900">
+            Investment Account Mapping
+          </h2>
+          <p className="mt-0.5 text-sm text-gray-600">
+            When an investment is approved, the system automatically posts a
+            double-entry journal:{" "}
+            <strong>DR Custodian Account</strong> and{" "}
+            <strong>CR Customer Liabilities Account</strong>. Both must be
+            configured before any investment entry can be submitted.
+          </p>
+        </div>
+        {isConfigured ? (
+          <span className="shrink-0 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">
+            Configured
+          </span>
+        ) : (
+          <span className="shrink-0 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">
+            Not configured
+          </span>
+        )}
+      </div>
+
+      {settingsLoading ? (
+        <div className="flex items-center gap-2 text-sm text-gray-400">
+          <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-gray-300 border-t-gray-500" />
+          Loading settings…
+        </div>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2">
+          {/* Debit — Custodian Account (Asset) */}
+          <div className="rounded-lg border border-gray-200 bg-white p-4">
+            <div className="mb-2 flex items-center gap-2">
+              <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700">
+                DR
+              </span>
+              <span className="text-sm font-semibold text-gray-800">
+                Custodian Account
+              </span>
+              <span className="text-xs text-gray-400">(Asset)</span>
+            </div>
+            {settings?.debitSubGroup ? (
+              <div className="mb-3">
+                <p className="font-mono text-sm font-bold text-gray-900">
+                  {settings.debitSubGroup.code}
+                </p>
+                <p className="text-sm text-gray-600">
+                  {settings.debitSubGroup.name}
+                </p>
+              </div>
+            ) : (
+              <p className="mb-3 text-sm text-amber-700">
+                No account designated yet.
+              </p>
+            )}
+            {canManage &&
+              (selectingDebit ? (
+                <div className="space-y-2">
+                  {assetSubGroups.length === 0 ? (
+                    <p className="text-xs text-gray-500">
+                      No Asset sub-groups exist. Create one first.
+                    </p>
+                  ) : (
+                    <>
+                      <select
+                        value={selectedDebitCode}
+                        onChange={(e) =>
+                          setSelectedDebitCode(
+                            e.target.value ? parseInt(e.target.value, 10) : ""
+                          )
+                        }
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                      >
+                        <option value="">Select sub-group…</option>
+                        {assetSubGroups.map((s) => (
+                          <option key={s.code} value={s.code}>
+                            {s.code} — {s.name} ({s.groupName})
+                          </option>
+                        ))}
+                      </select>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={handleSetDebit}
+                          disabled={
+                            !selectedDebitCode || debitMutation.isPending
+                          }
+                          className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {debitMutation.isPending ? "Saving…" : "Confirm"}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSelectingDebit(false);
+                            setSelectedDebitCode("");
+                          }}
+                          className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <button
+                  onClick={() => setSelectingDebit(true)}
+                  className="text-xs font-medium text-primary hover:underline"
+                >
+                  {settings?.debitSubGroup ? "Change account" : "Designate account"}
+                </button>
+              ))}
+          </div>
+
+          {/* Credit — Customer Liabilities Account (Liability) */}
+          <div className="rounded-lg border border-gray-200 bg-white p-4">
+            <div className="mb-2 flex items-center gap-2">
+              <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
+                CR
+              </span>
+              <span className="text-sm font-semibold text-gray-800">
+                Customer Liabilities Account
+              </span>
+              <span className="text-xs text-gray-400">(Liability)</span>
+            </div>
+            {settings?.creditSubGroup ? (
+              <div className="mb-3">
+                <p className="font-mono text-sm font-bold text-gray-900">
+                  {settings.creditSubGroup.code}
+                </p>
+                <p className="text-sm text-gray-600">
+                  {settings.creditSubGroup.name}
+                </p>
+              </div>
+            ) : (
+              <p className="mb-3 text-sm text-amber-700">
+                No account designated yet.
+              </p>
+            )}
+            {canManage &&
+              (selectingCredit ? (
+                <div className="space-y-2">
+                  {liabilitySubGroups.length === 0 ? (
+                    <p className="text-xs text-gray-500">
+                      No Liability sub-groups exist. Create one first.
+                    </p>
+                  ) : (
+                    <>
+                      <select
+                        value={selectedCreditCode}
+                        onChange={(e) =>
+                          setSelectedCreditCode(
+                            e.target.value ? parseInt(e.target.value, 10) : ""
+                          )
+                        }
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                      >
+                        <option value="">Select sub-group…</option>
+                        {liabilitySubGroups.map((s) => (
+                          <option key={s.code} value={s.code}>
+                            {s.code} — {s.name} ({s.groupName})
+                          </option>
+                        ))}
+                      </select>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={handleSetCredit}
+                          disabled={
+                            !selectedCreditCode || creditMutation.isPending
+                          }
+                          className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {creditMutation.isPending ? "Saving…" : "Confirm"}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSelectingCredit(false);
+                            setSelectedCreditCode("");
+                          }}
+                          className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <button
+                  onClick={() => setSelectingCredit(true)}
+                  className="text-xs font-medium text-primary hover:underline"
+                >
+                  {settings?.creditSubGroup ? "Change account" : "Designate account"}
+                </button>
+              ))}
+          </div>
+        </div>
+      )}
+
+      {!isConfigured && !settingsLoading && (
+        <p className="mt-3 text-xs text-amber-700">
+          Both accounts must be designated before investment entries can be
+          submitted.
+        </p>
+      )}
+    </div>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ChartOfAccountsPage() {
@@ -427,6 +709,57 @@ export default function ChartOfAccountsPage() {
   const [showGroupModal, setShowGroupModal] = useState(false);
   const [showSubGroupModal, setShowSubGroupModal] = useState(false);
   const [inlineSubGroupFor, setInlineSubGroupFor] = useState<CoaGroup | null>(null);
+
+  // Inline rename state — only one item editable at a time
+  const [editingGroupCode, setEditingGroupCode] = useState<number | null>(null);
+  const [editingGroupName, setEditingGroupName] = useState("");
+  const [editingSubCode, setEditingSubCode] = useState<number | null>(null);
+  const [editingSubName, setEditingSubName] = useState("");
+
+  const updateGroupMutation = useUpdateAccountGroupName();
+  const updateSubMutation = useUpdateAccountSubGroupName();
+
+  function startEditGroup(code: number, currentName: string) {
+    setEditingSubCode(null);
+    setEditingGroupCode(code);
+    setEditingGroupName(currentName);
+  }
+
+  function startEditSub(code: number, currentName: string) {
+    setEditingGroupCode(null);
+    setEditingSubCode(code);
+    setEditingSubName(currentName);
+  }
+
+  async function saveGroupName(code: number) {
+    const name = editingGroupName.trim();
+    if (!name) return;
+    try {
+      await updateGroupMutation.mutateAsync({ code, payload: { name } });
+      toast.success("Group name updated.");
+      setEditingGroupCode(null);
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message ?? "Failed to update name";
+      toast.error(Array.isArray(msg) ? msg.join(", ") : msg);
+    }
+  }
+
+  async function saveSubName(code: number) {
+    const name = editingSubName.trim();
+    if (!name) return;
+    try {
+      await updateSubMutation.mutateAsync({ code, payload: { name } });
+      toast.success("Sub-group name updated.");
+      setEditingSubCode(null);
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message ?? "Failed to update name";
+      toast.error(Array.isArray(msg) ? msg.join(", ") : msg);
+    }
+  }
 
   const { data: groups, isLoading, error } = useChartOfAccounts();
 
@@ -511,6 +844,14 @@ export default function ChartOfAccountsPage() {
         )}
       </div>
 
+      {/* Investment Account Mapping — always visible to finance users */}
+      <div className="mb-6">
+        <InvestmentAccountSetupPanel
+          groups={coaGroups}
+          canManage={canManage}
+        />
+      </div>
+
       {coaGroups.length === 0 ? (
         <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 py-16 text-center">
           <p className="text-gray-500">No account groups defined yet.</p>
@@ -533,11 +874,69 @@ export default function ChartOfAccountsPage() {
               {/* Group header */}
               <div className="flex items-center justify-between border-b border-gray-100 bg-gray-50 px-5 py-4">
                 <div className="flex items-center gap-4">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white border border-gray-200 font-mono text-sm font-bold text-gray-700 shadow-sm">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white border border-gray-200 font-mono text-sm font-bold text-gray-700 shadow-sm">
                     {group.code}
                   </div>
                   <div>
-                    <p className="font-semibold text-gray-900">{group.name}</p>
+                    {canManage && editingGroupCode === group.code ? (
+                      <div className="flex items-center gap-2">
+                        <input
+                          autoFocus
+                          value={editingGroupName}
+                          onChange={(e) => setEditingGroupName(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") void saveGroupName(group.code);
+                            if (e.key === "Escape") setEditingGroupCode(null);
+                          }}
+                          className="rounded-md border border-primary px-2 py-1 text-sm font-semibold text-gray-900 focus:outline-none focus:ring-1 focus:ring-primary"
+                        />
+                        <button
+                          onClick={() => void saveGroupName(group.code)}
+                          disabled={
+                            !editingGroupName.trim() ||
+                            updateGroupMutation.isPending
+                          }
+                          className="rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-white hover:bg-primary/90 disabled:opacity-50"
+                        >
+                          {updateGroupMutation.isPending ? "…" : "Save"}
+                        </button>
+                        <button
+                          onClick={() => setEditingGroupCode(null)}
+                          className="rounded-md border border-gray-300 px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <p className="font-semibold text-gray-900">
+                          {group.name}
+                        </p>
+                        {canManage && (
+                          <button
+                            onClick={() =>
+                              startEditGroup(group.code, group.name)
+                            }
+                            title="Rename group"
+                            className="rounded p-0.5 text-gray-400 hover:bg-gray-200 hover:text-gray-700"
+                          >
+                            <svg
+                              className="h-3.5 w-3.5"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 112.828 2.828L11.828 15.828a2 2 0 01-1.414.586H9v-2a2 2 0 01.586-1.414z"
+                              />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
+                    )}
                     <p className="text-xs text-gray-500">
                       Range: {group.rangeLabel}
                     </p>
@@ -564,7 +963,7 @@ export default function ChartOfAccountsPage() {
               </div>
 
               {/* Sub-groups */}
-              {group.subGroups.length > 0 ? (
+                {group.subGroups.length > 0 ? (
                 <div className="divide-y divide-gray-100">
                   {group.subGroups.map((sub) => (
                     <div
@@ -589,7 +988,75 @@ export default function ChartOfAccountsPage() {
                           {sub.code}
                         </span>
                       </div>
-                      <span className="text-sm text-gray-600">{sub.name}</span>
+                      {canManage && editingSubCode === sub.code ? (
+                        <div className="flex items-center gap-2">
+                          <input
+                            autoFocus
+                            value={editingSubName}
+                            onChange={(e) => setEditingSubName(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") void saveSubName(sub.code);
+                              if (e.key === "Escape") setEditingSubCode(null);
+                            }}
+                            className="rounded-md border border-primary px-2 py-1 text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-primary"
+                          />
+                          <button
+                            onClick={() => void saveSubName(sub.code)}
+                            disabled={
+                              !editingSubName.trim() ||
+                              updateSubMutation.isPending
+                            }
+                            className="rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-white hover:bg-primary/90 disabled:opacity-50"
+                          >
+                            {updateSubMutation.isPending ? "…" : "Save"}
+                          </button>
+                          <button
+                            onClick={() => setEditingSubCode(null)}
+                            className="rounded-md border border-gray-300 px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-gray-600">
+                            {sub.name}
+                          </span>
+                          {canManage && (
+                            <button
+                              onClick={() =>
+                                startEditSub(sub.code, sub.name)
+                              }
+                              title="Rename sub-group"
+                              className="rounded p-0.5 text-gray-400 hover:bg-gray-200 hover:text-gray-600"
+                            >
+                              <svg
+                                className="h-3 w-3"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 112.828 2.828L11.828 15.828a2 2 0 01-1.414.586H9v-2a2 2 0 01.586-1.414z"
+                                />
+                              </svg>
+                            </button>
+                          )}
+                        </div>
+                      )}
+                      {sub.isInvestmentDebitAccount && (
+                        <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700">
+                          Investment DR
+                        </span>
+                      )}
+                      {sub.isInvestmentCreditAccount && (
+                        <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
+                          Investment CR
+                        </span>
+                      )}
                     </div>
                   ))}
                 </div>
