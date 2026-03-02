@@ -10,6 +10,8 @@ const ACCOUNT_TYPE_ORDER = [
   "equity",
   "revenue",
   "expense",
+  "fund_control",
+  "suspense",
 ] as const;
 
 const ACCOUNT_TYPE_LABELS: Record<string, string> = {
@@ -18,6 +20,8 @@ const ACCOUNT_TYPE_LABELS: Record<string, string> = {
   equity: "Equity",
   revenue: "Revenue",
   expense: "Expenses",
+  fund_control: "Fund / Client Control",
+  suspense: "Suspense / Off-Balance",
 };
 
 export default function TrialBalancePage() {
@@ -181,7 +185,7 @@ export default function TrialBalancePage() {
             </table>
           </div>
 
-          {!ACCOUNT_TYPE_ORDER.some(
+          {!([...ACCOUNT_TYPE_ORDER] as string[]).some(
             (t) =>
               (tbData.accountsByType[t] ?? []).filter(
                 (acc) => acc.debit !== 0 || acc.credit !== 0

@@ -64,6 +64,7 @@ export const PERMISSIONS = {
   FINANCE_VIEW: "finance:view",
   FINANCE_MANAGE: "finance:manage",
   FINANCE_COA_MANAGE: "finance:coa_manage",
+  FINANCE_APPROVE: "finance:approve",
 } as const;
 
 /**

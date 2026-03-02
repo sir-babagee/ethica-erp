@@ -15,6 +15,8 @@ const ACCOUNT_TYPE_COLORS: Record<string, string> = {
   equity: "bg-purple-100 text-purple-700",
   revenue: "bg-green-100 text-green-700",
   expense: "bg-orange-100 text-orange-700",
+  fund_control: "bg-teal-100 text-teal-700",
+  suspense: "bg-gray-200 text-gray-600",
 };
 
 function formatDate(dateStr: string): string {

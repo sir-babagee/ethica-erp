@@ -21,6 +21,8 @@ const ACCOUNT_TYPE_LABELS: Record<AccountType, string> = {
   equity: "Equity",
   revenue: "Revenue",
   expense: "Expense",
+  fund_control: "Fund Control",
+  suspense: "Suspense",
 };
 
 const ACCOUNT_TYPE_COLORS: Record<AccountType, string> = {
@@ -29,6 +31,8 @@ const ACCOUNT_TYPE_COLORS: Record<AccountType, string> = {
   equity: "bg-purple-100 text-purple-700",
   revenue: "bg-green-100 text-green-700",
   expense: "bg-orange-100 text-orange-700",
+  fund_control: "bg-teal-100 text-teal-700",
+  suspense: "bg-gray-200 text-gray-600",
 };
 
 // ─── Create Group Modal ───────────────────────────────────────────────────────
@@ -146,6 +150,8 @@ function CreateGroupModal({
               <option value="equity">Equity</option>
               <option value="revenue">Revenue</option>
               <option value="expense">Expense</option>
+              <option value="fund_control">Fund / Client Control</option>
+              <option value="suspense">Suspense / Off-Balance</option>
             </select>
           </div>
           {submitError && (
@@ -179,33 +185,33 @@ function CreateGroupModal({
 
 function CreateSubGroupModal({
   groups,
+  preselectedGroup,
   onClose,
 }: {
   groups: CoaGroup[];
+  preselectedGroup?: CoaGroup;
   onClose: () => void;
 }) {
-  // The group the user picks first
   const [selectedGroupCode, setSelectedGroupCode] = useState<number | "">(
-    groups[0]?.code ?? ""
+    preselectedGroup?.code ?? groups[0]?.code ?? ""
   );
-  // Only the 3 digits the user types (e.g. "001" → combined with prefix "1" = "1001")
   const [suffix, setSuffix] = useState("");
   const [name, setName] = useState("");
   const [submitError, setSubmitError] = useState("");
   const mutation = useCreateAccountSubGroup();
 
-  const selectedGroup = groups.find((g) => g.code === selectedGroupCode);
+  const isLocked = !!preselectedGroup;
+  const selectedGroup = isLocked
+    ? preselectedGroup
+    : groups.find((g) => g.code === selectedGroupCode);
 
-  // The locked prefix is the first digit of the group code (e.g. "1" for group 1000)
   const prefix = selectedGroup ? String(selectedGroup.code)[0] : "";
 
-  // Assembled 4-digit sub-group code
   const fullCode =
     prefix && suffix.length === 3
       ? parseInt(`${prefix}${suffix}`, 10)
       : null;
 
-  // All codes already in use
   const allUsedCodes = new Set<number>([
     ...groups.map((g) => g.code),
     ...groups.flatMap((g) => g.subGroups.map((s) => s.code)),
@@ -228,7 +234,6 @@ function CreateSubGroupModal({
     name.trim().length > 0;
 
   const handleSuffixChange = (raw: string) => {
-    // Allow only digits, max 3 chars
     const digits = raw.replace(/\D/g, "").slice(0, 3);
     setSuffix(digits);
   };
@@ -252,77 +257,98 @@ function CreateSubGroupModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
         <h2 className="mb-1 text-lg font-semibold text-gray-900">
-          New Account Sub-Group
+          {isLocked
+            ? `Add Sub-Group to ${selectedGroup!.name}`
+            : "New Account Sub-Group"}
         </h2>
         <p className="mb-5 text-sm text-gray-500">
-          Select a group, then enter the last 3 digits of the sub-group code.
+          {isLocked
+            ? "The parent group is fixed. Enter the last 3 digits of the new sub-group code and a name."
+            : "Select a group, then enter the last 3 digits of the sub-group code."}
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Step 1 — Pick group */}
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
-              1. Account Group
-            </label>
-            {groups.length === 0 ? (
-              <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-700">
-                No groups exist yet. Create a group first.
-              </p>
-            ) : (
-              <select
-                required
-                value={selectedGroupCode}
-                onChange={(e) => {
-                  setSelectedGroupCode(parseInt(e.target.value, 10));
-                  setSuffix(""); // reset suffix when group changes
-                }}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+          {/* Parent group — locked read-only strip or dropdown */}
+          {isLocked ? (
+            <div className="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white font-mono text-sm font-bold text-gray-700 shadow-sm">
+                {selectedGroup!.code}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-gray-900">
+                  {selectedGroup!.name}
+                </p>
+                <p className="text-xs text-gray-500">
+                  Range: {selectedGroup!.code}–{selectedGroup!.code + 999}
+                </p>
+              </div>
+              <span
+                className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${ACCOUNT_TYPE_COLORS[selectedGroup!.accountType]}`}
               >
-                {groups.map((g) => (
-                  <option key={g.code} value={g.code}>
-                    {g.code} – {g.name} ({g.accountType})
-                  </option>
-                ))}
-              </select>
-            )}
-          </div>
+                {ACCOUNT_TYPE_LABELS[selectedGroup!.accountType]}
+              </span>
+            </div>
+          ) : (
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                1. Account Group
+              </label>
+              {groups.length === 0 ? (
+                <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-700">
+                  No groups exist yet. Create a group first.
+                </p>
+              ) : (
+                <select
+                  required
+                  value={selectedGroupCode}
+                  onChange={(e) => {
+                    setSelectedGroupCode(parseInt(e.target.value, 10));
+                    setSuffix("");
+                  }}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  {groups.map((g) => (
+                    <option key={g.code} value={g.code}>
+                      {g.code} – {g.name} ({g.accountType})
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+          )}
 
-          {/* Step 2 — Sub-group code with locked prefix */}
+          {/* Sub-group code with locked prefix */}
           {selectedGroup && (
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">
-                2. Sub-Group Code
+                {isLocked ? "1." : "2."} Sub-Group Code
               </label>
-              <div className="flex items-center gap-0 overflow-hidden rounded-lg border border-gray-300 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary">
-                {/* Locked prefix */}
+              <div className="flex items-center overflow-hidden rounded-lg border border-gray-300 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary">
                 <div className="flex items-center gap-1.5 border-r border-gray-300 bg-gray-100 px-3 py-2">
                   <span className="font-mono text-sm font-bold text-gray-700">
                     {prefix}
                   </span>
                   <span className="text-xs text-gray-400">fixed</span>
                 </div>
-                {/* User-typed suffix */}
                 <input
                   type="text"
                   inputMode="numeric"
                   maxLength={3}
                   placeholder="___"
                   value={suffix}
+                  autoFocus={isLocked}
                   onChange={(e) => handleSuffixChange(e.target.value)}
                   className="flex-1 bg-transparent px-3 py-2 font-mono text-sm text-gray-900 placeholder-gray-300 focus:outline-none"
                 />
-                {/* Live preview */}
                 {suffix.length > 0 && (
                   <div className="border-l border-gray-200 bg-gray-50 px-3 py-2">
                     <span className="font-mono text-sm text-gray-500">
-                      = {prefix}
-                      {suffix.padEnd(3, "_")}
+                      = {prefix}{suffix.padEnd(3, "_")}
                     </span>
                   </div>
                 )}
               </div>
 
-              {/* Feedback */}
               {suffix.length === 3 && fullCode !== null ? (
                 suffixError ? (
                   <p className="mt-1 text-xs text-red-600">{suffixError}</p>
@@ -331,15 +357,12 @@ function CreateSubGroupModal({
                     ✓ Code{" "}
                     <span className="font-mono font-semibold">{fullCode}</span>{" "}
                     — will be added under{" "}
-                    <strong>
-                      {selectedGroup.code} – {selectedGroup.name}
-                    </strong>
+                    <strong>{selectedGroup.code} – {selectedGroup.name}</strong>
                   </p>
                 )
               ) : suffix.length > 0 ? (
                 <p className="mt-1 text-xs text-gray-400">
-                  Enter {3 - suffix.length} more digit
-                  {3 - suffix.length !== 1 ? "s" : ""}
+                  Enter {3 - suffix.length} more digit{3 - suffix.length !== 1 ? "s" : ""}
                 </p>
               ) : (
                 <p className="mt-1 text-xs text-gray-400">
@@ -350,11 +373,11 @@ function CreateSubGroupModal({
             </div>
           )}
 
-          {/* Step 3 — Name */}
+          {/* Name */}
           {selectedGroup && (
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">
-                3. Name
+                {isLocked ? "2." : "3."} Name
               </label>
               <input
                 type="text"
@@ -403,6 +426,7 @@ export default function ChartOfAccountsPage() {
 
   const [showGroupModal, setShowGroupModal] = useState(false);
   const [showSubGroupModal, setShowSubGroupModal] = useState(false);
+  const [inlineSubGroupFor, setInlineSubGroupFor] = useState<CoaGroup | null>(null);
 
   const { data: groups, isLoading, error } = useChartOfAccounts();
 
@@ -446,6 +470,13 @@ export default function ChartOfAccountsPage() {
         <CreateSubGroupModal
           groups={coaGroups}
           onClose={() => setShowSubGroupModal(false)}
+        />
+      )}
+      {inlineSubGroupFor && (
+        <CreateSubGroupModal
+          groups={coaGroups}
+          preselectedGroup={inlineSubGroupFor}
+          onClose={() => setInlineSubGroupFor(null)}
         />
       )}
 
@@ -512,11 +543,24 @@ export default function ChartOfAccountsPage() {
                     </p>
                   </div>
                 </div>
-                <span
-                  className={`rounded-full px-3 py-1 text-xs font-medium ${ACCOUNT_TYPE_COLORS[group.accountType]}`}
-                >
-                  {ACCOUNT_TYPE_LABELS[group.accountType]}
-                </span>
+                <div className="flex items-center gap-3">
+                  {canManage && (
+                    <button
+                      onClick={() => setInlineSubGroupFor(group)}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 shadow-sm hover:bg-gray-50 hover:text-gray-900"
+                    >
+                      <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                      Add Sub-group
+                    </button>
+                  )}
+                  <span
+                    className={`rounded-full px-3 py-1 text-xs font-medium ${ACCOUNT_TYPE_COLORS[group.accountType]}`}
+                  >
+                    {ACCOUNT_TYPE_LABELS[group.accountType]}
+                  </span>
+                </div>
               </div>
 
               {/* Sub-groups */}

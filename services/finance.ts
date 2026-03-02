@@ -8,9 +8,9 @@ import type {
   CoaSubGroupFlat,
   CreateAccountGroupPayload,
   CreateAccountSubGroupPayload,
-  AccountingTransaction,
-  AccountingTransactionsResponse,
-  CreateAccountingTransactionPayload,
+  JournalEntry,
+  JournalEntriesResponse,
+  CreateJournalEntryPayload,
   GlResult,
   CoaBalanceItem,
   LedgerDetailResult,
@@ -18,7 +18,7 @@ import type {
 } from "@/types";
 
 const COA_KEY = "finance-coa";
-const TX_KEY = "finance-transactions";
+const JOURNAL_KEY = "finance-journals";
 const GL_KEY = "finance-gl";
 const TB_KEY = "finance-trial-balance";
 
@@ -92,24 +92,26 @@ export function useCreateAccountSubGroup() {
   });
 }
 
-// ─── Accounting Transactions ──────────────────────────────────────────────────
+// ─── Journal Entries ──────────────────────────────────────────────────────────
 
-export function useAccountingTransactions(
+export function useJournalEntries(
   page = 1,
   limit = 20,
   dateFrom?: string,
   dateTo?: string,
-  account?: string
+  status?: "pending" | "posted",
+  sourceModule?: string
 ) {
   return useQuery({
-    queryKey: [TX_KEY, page, limit, dateFrom, dateTo, account],
+    queryKey: [JOURNAL_KEY, page, limit, dateFrom, dateTo, status, sourceModule],
     queryFn: async () => {
       const params: Record<string, string | number> = { page, limit };
       if (dateFrom) params.dateFrom = dateFrom;
       if (dateTo) params.dateTo = dateTo;
-      if (account) params.account = account;
-      const res = await api.get<AccountingTransactionsResponse>(
-        "/api/proxy/finance/transactions",
+      if (status) params.status = status;
+      if (sourceModule) params.sourceModule = sourceModule;
+      const res = await api.get<JournalEntriesResponse>(
+        "/api/proxy/finance/journals",
         { params }
       );
       return res.data;
@@ -117,12 +119,12 @@ export function useAccountingTransactions(
   });
 }
 
-export function useAccountingTransaction(id: string) {
+export function useJournalEntry(id: string) {
   return useQuery({
-    queryKey: [TX_KEY, id],
+    queryKey: [JOURNAL_KEY, id],
     queryFn: async () => {
-      const res = await api.get<AccountingTransaction>(
-        `/api/proxy/finance/transactions/${id}`
+      const res = await api.get<JournalEntry>(
+        `/api/proxy/finance/journals/${id}`
       );
       return res.data;
     },
@@ -130,18 +132,30 @@ export function useAccountingTransaction(id: string) {
   });
 }
 
-export function useCreateAccountingTransaction() {
+export function useCreateJournalEntry() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (payload: CreateAccountingTransactionPayload) =>
+    mutationFn: (payload: CreateJournalEntryPayload) =>
       api
-        .post<AccountingTransaction>(
-          "/api/proxy/finance/transactions",
-          payload
-        )
+        .post<JournalEntry>("/api/proxy/finance/journals", payload)
         .then((r) => r.data),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: [TX_KEY] });
+      void queryClient.invalidateQueries({ queryKey: [JOURNAL_KEY] });
+      void queryClient.invalidateQueries({ queryKey: [GL_KEY] });
+      void queryClient.invalidateQueries({ queryKey: [TB_KEY] });
+    },
+  });
+}
+
+export function useApproveJournalEntry() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      api
+        .post<JournalEntry>(`/api/proxy/finance/journals/${id}/approve`)
+        .then((r) => r.data),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: [JOURNAL_KEY] });
       void queryClient.invalidateQueries({ queryKey: [GL_KEY] });
       void queryClient.invalidateQueries({ queryKey: [TB_KEY] });
     },
