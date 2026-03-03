@@ -218,9 +218,15 @@ export default function JournalEntryDetailPage() {
             label="Source Module"
             value={SOURCE_MODULE_LABELS[journal.sourceModule] ?? journal.sourceModule}
           />
-          <MetaField label="Fund ID" value={journal.fundId} />
+          <MetaField
+            label="Fund"
+            value={journal.fund?.name ?? journal.fundId ?? "—"}
+          />
           <MetaField label="Client ID" value={journal.clientId} />
-          <MetaField label="Entity ID" value={journal.entityId} />
+          <MetaField
+            label="Branch"
+            value={journal.branch?.name ?? journal.entityId ?? "—"}
+          />
           <MetaField label="Created" value={formatDateTime(journal.createdAt)} />
           {isPosted && (
             <MetaField label="Approved" value={formatDateTime(journal.approvedAt)} />

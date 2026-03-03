@@ -121,6 +121,8 @@ export interface JournalEntry {
   lines: JournalLine[];
   createdAt: string;
   updatedAt: string;
+  fund?: { id: string; name: string; code: string } | null;
+  branch?: { id: string; name: string; code: string } | null;
 }
 
 export interface JournalEntriesResponse {

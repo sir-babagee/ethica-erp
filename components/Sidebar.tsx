@@ -140,6 +140,24 @@ function UserGroupIcon({ className }: { className?: string }) {
   );
 }
 
+function UserIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+      />
+    </svg>
+  );
+}
+
 function UserPlusIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -549,6 +567,13 @@ export function Sidebar() {
             </span>
           </div>
           <div className="space-y-0.5">
+            <Link
+              href="/u/profile"
+              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900"
+            >
+              <UserIcon className="h-5 w-5" />
+              Profile
+            </Link>
             <Link
               href="/u/settings"
               className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900"

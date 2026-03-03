@@ -24,7 +24,6 @@ export default function AuthLayout({
         router.replace("/u/change-password");
       }
       setAuthChecked(true);
-      return;
     }
 
     api
