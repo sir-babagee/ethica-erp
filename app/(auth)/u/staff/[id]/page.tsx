@@ -6,7 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { useAuthStore } from "@/stores/authStore";
-import { PERMISSIONS, ROLE_LABELS, CREATABLE_ROLES } from "@/constants/roles";
+import { PERMISSIONS, ROLE_LABELS, ROLES, CREATABLE_ROLES } from "@/constants/roles";
 import { useAllStaff, useUpdateStaff } from "@/services/staff";
 import { useBranches } from "@/services/branches";
 import { useActivityLogs } from "@/services/activityLogs";
@@ -119,7 +119,8 @@ export default function StaffDetailPage() {
     const next: Partial<EditForm> = {};
     if (!editForm.firstName.trim()) next.firstName = "First name is required";
     if (!editForm.lastName.trim()) next.lastName = "Last name is required";
-    if (!editForm.role) next.role = "Role is required";
+    // Role is locked for admin accounts — skip validation
+    if (!isTargetAdmin && !editForm.role) next.role = "Role is required";
     setEditErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -134,7 +135,8 @@ export default function StaffDetailPage() {
         input: {
           firstName: editForm.firstName.trim(),
           lastName: editForm.lastName.trim(),
-          role: editForm.role,
+          // Never send role when editing an admin account
+          ...(!isTargetAdmin && { role: editForm.role }),
           branchId: editForm.branchId || null,
         },
       },
@@ -153,6 +155,9 @@ export default function StaffDetailPage() {
       }
     );
   };
+
+  // When the target is an admin, role cannot be changed — only name and branch are editable
+  const isTargetAdmin = staff?.role === ROLES.ADMIN;
 
   const resolvedBranchName =
     staff?.branchId
@@ -283,7 +288,9 @@ export default function StaffDetailPage() {
         {isEditing && (
           <form onSubmit={handleSaveEdit} className="px-6 py-5">
             <p className="mb-4 text-sm font-medium text-gray-500">
-              Edit staff details below. Email address cannot be changed.
+              {isTargetAdmin
+                ? "Admin accounts — only name and branch can be updated. Role and email cannot be changed."
+                : "Edit staff details below. Email address cannot be changed."}
             </p>
             <div className="grid gap-4 sm:grid-cols-2">
               {/* First name */}
@@ -339,27 +346,44 @@ export default function StaffDetailPage() {
                 </div>
               </div>
 
-              {/* Role */}
+              {/* Role — locked when target is admin */}
               <div>
                 <label className="mb-1 block text-sm font-medium text-gray-700">
                   Role
                 </label>
-                <select
-                  value={editForm.role}
-                  onChange={(e) =>
-                    setEditForm((f) => ({ ...f, role: e.target.value }))
-                  }
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-                >
-                  <option value="">Select role</option>
-                  {CREATABLE_ROLES.map((r) => (
-                    <option key={r.value} value={r.value}>
-                      {r.label}
-                    </option>
-                  ))}
-                </select>
-                {editErrors.role && (
-                  <p className="mt-1 text-xs text-red-600">{editErrors.role}</p>
+                {isTargetAdmin ? (
+                  <>
+                    <div className="flex items-center rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5">
+                      <span className="text-sm text-gray-500">
+                        {ROLE_LABELS[staff.role] ?? staff.role}
+                      </span>
+                      <span className="ml-2 text-xs text-gray-400">
+                        (cannot be changed)
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <select
+                      value={editForm.role}
+                      onChange={(e) =>
+                        setEditForm((f) => ({ ...f, role: e.target.value }))
+                      }
+                      className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    >
+                      <option value="">Select role</option>
+                      {CREATABLE_ROLES.map((r) => (
+                        <option key={r.value} value={r.value}>
+                          {r.label}
+                        </option>
+                      ))}
+                    </select>
+                    {editErrors.role && (
+                      <p className="mt-1 text-xs text-red-600">
+                        {editErrors.role}
+                      </p>
+                    )}
+                  </>
                 )}
               </div>
 
