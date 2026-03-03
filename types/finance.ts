@@ -146,8 +146,34 @@ export interface CreateJournalEntryPayload {
   narration?: string;
   fundId?: string;
   clientId?: string;
-  entityId?: string;
   lines: CreateJournalLinePayload[];
+}
+
+// ─── Funds ────────────────────────────────────────────────────────────────────
+
+export interface Fund {
+  id: string;
+  name: string;
+  code: string;
+  description: string | null;
+  currency: string;
+  isActive: boolean;
+  createdById: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateFundPayload {
+  name: string;
+  code: string;
+  description?: string;
+  currency?: string;
+}
+
+export interface UpdateFundPayload {
+  name?: string;
+  description?: string;
+  isActive?: boolean;
 }
 
 // ─── General Ledger ───────────────────────────────────────────────────────────

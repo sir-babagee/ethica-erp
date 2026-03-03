@@ -6,13 +6,16 @@ import Link from "next/link";
 import {
   useChartOfAccounts,
   useCreateJournalEntry,
+  useFunds,
 } from "@/services/finance";
+import { useAuthStore } from "@/stores/authStore";
 import { formatAmountInputDisplay, parseFormattedNumber } from "@/utils/priceFormatter";
 import type {
   CoaGroup,
   CreateJournalLinePayload,
   ShariahTag,
   SourceModule,
+  Fund,
 } from "@/types";
 
 const SOURCE_MODULE_OPTIONS: { value: SourceModule; label: string }[] = [
@@ -75,7 +78,9 @@ function emptyLine(): LineState {
 
 export default function NewJournalEntryPage() {
   const router = useRouter();
+  const user = useAuthStore((s) => s.user);
   const { data: coaGroups } = useChartOfAccounts();
+  const { data: funds } = useFunds();
   const mutation = useCreateJournalEntry();
 
   const today = new Date().toISOString().split("T")[0];
@@ -85,7 +90,6 @@ export default function NewJournalEntryPage() {
   const [narration, setNarration] = useState("");
   const [fundId, setFundId] = useState("");
   const [clientId, setClientId] = useState("");
-  const [entityId, setEntityId] = useState("");
   const [lines, setLines] = useState<LineState[]>([emptyLine(), emptyLine()]);
   const [error, setError] = useState("");
   const [fxRateCache, setFxRateCache] = useState<Record<string, number>>({});
@@ -199,9 +203,8 @@ export default function NewJournalEntryPage() {
         date,
         sourceModule,
         narration: narration.trim() || undefined,
-        fundId: fundId.trim() || undefined,
+        fundId: fundId || undefined,
         clientId: clientId.trim() || undefined,
-        entityId: entityId.trim() || undefined,
         lines: payload,
       });
       router.push("/u/finance/accounting-transactions");
@@ -242,6 +245,36 @@ export default function NewJournalEntryPage() {
           approved by an authorised officer.
         </p>
       </div>
+
+      {!user?.branchId && (
+        <div className="mx-auto mb-6 max-w-4xl rounded-xl border border-red-200 bg-red-50 px-5 py-4">
+          <div className="flex gap-3">
+            <svg
+              className="mt-0.5 h-5 w-5 shrink-0 text-red-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+              />
+            </svg>
+            <div>
+              <p className="font-semibold text-red-800">
+                Branch not assigned — cannot post entries
+              </p>
+              <p className="mt-0.5 text-sm text-red-700">
+                Every journal entry must be traceable to a branch. Your account
+                does not have a branch assigned yet. Contact an administrator to
+                update your profile before posting.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="mx-auto max-w-4xl space-y-6">
         {/* Header fields */}
@@ -285,19 +318,31 @@ export default function NewJournalEntryPage() {
               </select>
             </div>
 
-            {/* Fund ID */}
+            {/* Fund */}
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">
-                Fund ID{" "}
+                Fund{" "}
                 <span className="font-normal text-gray-400">(optional)</span>
               </label>
-              <input
-                type="text"
-                placeholder="e.g. Fund A"
+              <select
                 value={fundId}
                 onChange={(e) => setFundId(e.target.value)}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-              />
+              >
+                <option value="">No fund selected</option>
+                {(funds ?? [])
+                  .filter((f) => f.isActive)
+                  .map((f) => (
+                    <option key={f.id} value={f.id}>
+                      {f.name} ({f.code})
+                    </option>
+                  ))}
+              </select>
+              {(!funds || funds.length === 0) && (
+                <p className="mt-1 text-xs text-amber-600">
+                  No funds configured yet. Create funds under Finance → Funds.
+                </p>
+              )}
             </div>
 
             {/* Client ID */}
@@ -315,19 +360,29 @@ export default function NewJournalEntryPage() {
               />
             </div>
 
-            {/* Entity ID */}
+            {/* Branch (entity) — auto-populated, display only */}
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">
-                Entity ID{" "}
-                <span className="font-normal text-gray-400">(optional)</span>
+                Branch
               </label>
-              <input
-                type="text"
-                placeholder="Legal entity identifier"
-                value={entityId}
-                onChange={(e) => setEntityId(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-              />
+              <div className="flex items-center rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+                <svg
+                  className="mr-2 h-4 w-4 shrink-0 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                <span className="text-xs text-gray-500">
+                  Auto-populated from your branch assignment
+                </span>
+              </div>
             </div>
 
             {/* Narration */}
@@ -638,8 +693,8 @@ export default function NewJournalEntryPage() {
           </Link>
           <button
             type="submit"
-            disabled={mutation.isPending || !isBalanced}
-            className="rounded-lg bg-primary px-6 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-60"
+            disabled={mutation.isPending || !isBalanced || !user?.branchId}
+            className="rounded-lg bg-primary px-6 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {mutation.isPending ? "Saving…" : "Save as Pending"}
           </button>

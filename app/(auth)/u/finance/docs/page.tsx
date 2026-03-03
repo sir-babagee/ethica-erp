@@ -93,6 +93,8 @@ const TOC_ITEMS = [
   { id: "how-it-flows", label: "How It All Flows" },
   { id: "chart-of-accounts", label: "Chart of Accounts" },
   { id: "investment-mapping", label: "↳ Investment Account Mapping" },
+  { id: "funds", label: "Funds" },
+  { id: "branches", label: "Branches & Entity Tagging" },
   { id: "journal-entries", label: "Journal Entries" },
   { id: "journal-header", label: "↳ Header Fields" },
   { id: "journal-lines", label: "↳ Journal Lines" },
@@ -549,8 +551,151 @@ export default function FinanceDocsPage() {
           </Note>
         </Section>
 
+        {/* FUNDS */}
+        <Section id="funds" title="2. Funds">
+          <p>
+            Funds are named investment vehicles that journal entries can be
+            tagged against. When a journal relates to a specific fund — such as
+            a subscription, trade, or fee accrual — you select the fund from a
+            dropdown in the journal entry form. This allows the General Ledger
+            and reporting to be filtered by fund, giving each fund its own
+            clear view of inflows, outflows, and balances.
+          </p>
+
+          <div className="mt-4 space-y-4">
+            <div className="rounded-lg border border-gray-200 bg-white p-4">
+              <p className="mb-3 font-semibold text-gray-900">
+                Creating and managing funds
+              </p>
+              <div className="space-y-3">
+                <Step number={1} title="Go to Finance → Funds">
+                  Open the <strong>Funds</strong> page from the Finance section
+                  of the sidebar.
+                </Step>
+                <Step number={2} title='Click "New Fund"'>
+                  Fill in the fund name (e.g. Ethica Income Fund), a short
+                  unique code (e.g. EIF-01), and optionally a description and
+                  base currency. The code cannot be changed after creation.
+                </Step>
+                <Step number={3} title="Save">
+                  The fund is created as Active and immediately available in
+                  the Fund dropdown on the journal entry form.
+                </Step>
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-gray-200 bg-white p-4">
+              <p className="mb-2 font-semibold text-gray-900">
+                Fund status
+              </p>
+              <p className="text-gray-600">
+                Each fund can be marked <strong>Active</strong> or{" "}
+                <strong>Inactive</strong>. Only active funds appear in the
+                journal entry dropdown. Deactivating a fund prevents new
+                entries from being tagged against it but does not affect
+                historical postings — all past journals retain their fund
+                association.
+              </p>
+            </div>
+
+            <div className="rounded-lg border border-gray-200 bg-white p-4">
+              <p className="mb-2 font-semibold text-gray-900">
+                Validation
+              </p>
+              <p className="text-gray-600">
+                When a journal is submitted, the API validates that the chosen
+                fund ID references a real, active fund in the database. A
+                free-text fund name is no longer accepted — you must select
+                from the pre-created list. This ensures consistency across all
+                journals and prevents misspellings or orphan references.
+              </p>
+            </div>
+          </div>
+
+          <Note>
+            Only staff with the <strong>COA Manage</strong> permission (admin
+            and fund accountant) can create or edit funds. All{" "}
+            <strong>Finance View</strong> holders can see the fund list in
+            read-only mode and select funds when creating journals.
+          </Note>
+        </Section>
+
+        {/* BRANCHES & ENTITY TAGGING */}
+        <Section id="branches" title="3. Branches & Entity Tagging">
+          <p>
+            Every journal entry is automatically tagged with the{" "}
+            <strong>branch</strong> of the staff member who posted it. This
+            populates the <strong>Entity ID</strong> field on the journal
+            header — you do not need to select or type anything. The branch
+            context is applied silently by the system at the moment of
+            submission.
+          </p>
+
+          <div className="mt-4 space-y-4">
+            <div className="rounded-lg border border-gray-200 bg-white p-4">
+              <p className="mb-2 font-semibold text-gray-900">
+                Why branches matter
+              </p>
+              <p className="text-gray-600">
+                Ethica Capital may operate out of multiple locations — a head
+                office and regional branches. Knowing which branch originated
+                each transaction lets management produce branch-level P&amp;L
+                reports and ensures that operational costs are allocated to
+                the correct part of the business.
+              </p>
+            </div>
+
+            <div className="rounded-lg border border-gray-200 bg-white p-4">
+              <p className="mb-3 font-semibold text-gray-900">
+                Setting up branches
+              </p>
+              <div className="space-y-3">
+                <Step number={1} title="Go to People → Branches">
+                  Open the <strong>Branches</strong> page from the People
+                  section of the sidebar. Only administrators can create and
+                  edit branches.
+                </Step>
+                <Step number={2} title="Create each branch">
+                  Provide the branch name, a short unique code (e.g.{" "}
+                  <span className="font-mono text-xs">VI-001</span>), full
+                  street address, and state. Country is always Nigeria.
+                  Designate exactly one branch as the{" "}
+                  <strong>Head Office</strong> using the toggle — only one
+                  head office is allowed across the entire company.
+                </Step>
+                <Step number={3} title="Assign staff to branches">
+                  When creating or editing a staff member (People → Staff →
+                  Edit Details), select their branch from the Branch dropdown.
+                  From that point on, all journal entries posted by that staff
+                  member will carry the branch&apos;s ID as the Entity tag.
+                </Step>
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-gray-200 bg-white p-4">
+              <p className="mb-2 font-semibold text-gray-900">
+                What if a staff member has no branch assigned?
+              </p>
+              <p className="text-gray-600">
+                If a staff member is not yet assigned to a branch, the Entity
+                ID on their journals will be blank (null). This is acceptable
+                during onboarding but should be resolved — assign a branch to
+                every staff member who posts entries to ensure clean
+                reporting.
+              </p>
+            </div>
+
+            <Warning>
+              Branch assignment only affects <strong>future</strong> journal
+              entries. Historical entries posted before a branch was assigned
+              retain their original (null) Entity ID — they are not
+              retroactively updated.
+            </Warning>
+          </div>
+        </Section>
+
         {/* JOURNAL ENTRIES */}
-        <Section id="journal-entries" title="2. Journal Entries">
+        <Section id="journal-entries" title="4. Journal Entries">
           <p>
             A journal entry records one complete accounting event. Unlike a
             simple transaction, a journal can have <strong>multiple lines</strong>{" "}
@@ -590,7 +735,7 @@ export default function FinanceDocsPage() {
         </Section>
 
         {/* JOURNAL HEADER FIELDS */}
-        <Section id="journal-header" title="Journal Header Fields">
+        <Section id="journal-header" title="↳ Journal Header Fields">
           <p>
             Every journal has a header section that provides context about the
             entry. Here is what each field means:
@@ -620,7 +765,7 @@ export default function FinanceDocsPage() {
                 />
                 <FieldRow
                   name="Fund ID"
-                  description="The name or identifier of the fund this journal belongs to (e.g. 'Fund A', 'Ethica Equity Fund I'). Required when the posting relates to a specific fund. Leave blank for entity-level postings like payroll or overheads."
+                  description="A dropdown selection of pre-created funds (e.g. Ethica Income Fund, Ethica Equity Fund I). Select the fund this journal belongs to. Only active funds appear in the list. Leave blank for entity-level postings that are not fund-specific, such as payroll or office overheads. Free-text input is no longer accepted — the system validates that the chosen ID references a real, active fund."
                 />
                 <FieldRow
                   name="Client ID"
@@ -628,7 +773,7 @@ export default function FinanceDocsPage() {
                 />
                 <FieldRow
                   name="Entity ID"
-                  description="The legal entity whose books are being posted. Ethica Capital may operate as both a fund manager (the company) and as fund trustee or operator. This field separates postings by entity so that each entity's P&L and balance sheet can be produced independently."
+                  description="Identifies which company branch posted this entry. This field is automatically populated from the branch assigned to your staff profile — you do not fill it in. If your account has no branch assigned yet, this field will be blank on your entries. Contact an administrator to update your branch assignment."
                 />
                 <FieldRow
                   name="Narration"
@@ -693,7 +838,7 @@ export default function FinanceDocsPage() {
         </Section>
 
         {/* APPROVAL */}
-        <Section id="approval" title="3. Approving a Journal">
+        <Section id="approval" title="5. Approving a Journal">
           <p>
             All journals start as <strong>Pending</strong> when saved. A pending
             journal is visible in the Journal Entries list but does not yet
@@ -954,7 +1099,7 @@ export default function FinanceDocsPage() {
         </Section>
 
         {/* GENERAL LEDGER */}
-        <Section id="general-ledger" title="4. General Ledger">
+        <Section id="general-ledger" title="6. General Ledger">
           <p>
             The General Ledger shows you the full history of all posted
             transactions for any account, along with a running balance. Only{" "}
@@ -1016,7 +1161,7 @@ export default function FinanceDocsPage() {
         </Section>
 
         {/* TRIAL BALANCE */}
-        <Section id="trial-balance" title="5. Trial Balance">
+        <Section id="trial-balance" title="7. Trial Balance">
           <p>
             The Trial Balance is a point-in-time summary of every account
             balance in the system, as of a date you choose. It is the primary
@@ -1055,7 +1200,7 @@ export default function FinanceDocsPage() {
         </Section>
 
         {/* PERMISSIONS */}
-        <Section id="permissions" title="6. Roles & Permissions">
+        <Section id="permissions" title="8. Roles & Permissions">
           <p>
             Access to the finance module is controlled by four permissions.
             Here is who has what:
@@ -1092,7 +1237,7 @@ export default function FinanceDocsPage() {
                   {
                     perm: "Finance COA Manage",
                     allows:
-                      "Create and manage Chart of Account groups and sub-groups; designate the investment debit and credit accounts",
+                      "Create and manage Chart of Account groups and sub-groups; designate the investment debit and credit accounts; create and manage Funds",
                     who: "Admin, Fund Accountant",
                   },
                   {

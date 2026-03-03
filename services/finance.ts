@@ -17,11 +17,15 @@ import type {
   CoaBalanceItem,
   LedgerDetailResult,
   TrialBalanceResult,
+  Fund,
+  CreateFundPayload,
+  UpdateFundPayload,
 } from "@/types";
 
 const COA_KEY = "finance-coa";
 const INV_SETTINGS_KEY = "finance-investment-settings";
 const JOURNAL_KEY = "finance-journals";
+const FUNDS_KEY = "finance-funds";
 const GL_KEY = "finance-gl";
 const TB_KEY = "finance-trial-balance";
 
@@ -241,6 +245,44 @@ export function useApproveJournalEntry() {
       void queryClient.invalidateQueries({ queryKey: [JOURNAL_KEY] });
       void queryClient.invalidateQueries({ queryKey: [GL_KEY] });
       void queryClient.invalidateQueries({ queryKey: [TB_KEY] });
+    },
+  });
+}
+
+// ─── Funds ────────────────────────────────────────────────────────────────────
+
+export function useFunds() {
+  return useQuery({
+    queryKey: [FUNDS_KEY],
+    queryFn: async () => {
+      const res = await api.get<Fund[]>("/api/proxy/finance/funds");
+      return res.data;
+    },
+  });
+}
+
+export function useCreateFund() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: CreateFundPayload) =>
+      api
+        .post<Fund>("/api/proxy/finance/funds", payload)
+        .then((r) => r.data),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: [FUNDS_KEY] });
+    },
+  });
+}
+
+export function useUpdateFund() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: UpdateFundPayload }) =>
+      api
+        .patch<Fund>(`/api/proxy/finance/funds/${id}`, payload)
+        .then((r) => r.data),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: [FUNDS_KEY] });
     },
   });
 }

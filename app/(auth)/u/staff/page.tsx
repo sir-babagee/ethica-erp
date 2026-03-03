@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAllStaff } from "@/services/staff";
+import { useBranches } from "@/services/branches";
 import type { Staff } from "@/types/auth";
 import { PERMISSIONS, ROLE_LABELS } from "@/constants/roles";
 import { useAuthStore } from "@/stores/authStore";
@@ -12,6 +13,7 @@ export default function StaffPage() {
   const router = useRouter();
   const permissions = useAuthStore((s) => s.permissions);
   const { data: staffList, isLoading, error } = useAllStaff();
+  const { data: branches } = useBranches();
 
   useEffect(() => {
     if (permissions.length > 0 && !permissions.includes(PERMISSIONS.STAFF_CREATE)) {
@@ -77,6 +79,9 @@ export default function StaffPage() {
                 Role
               </th>
               <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                Branch
+              </th>
+              <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                 Status
               </th>
               <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
@@ -85,9 +90,9 @@ export default function StaffPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 bg-white">
-            {staffList?.length === 0 ? (
+            {              staffList?.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
+                <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
                   No staff members yet.
                 </td>
               </tr>
@@ -110,6 +115,11 @@ export default function StaffPage() {
                     <span className="inline-flex rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium capitalize text-primary">
                       {ROLE_LABELS[staff.role] ?? staff.role.replace(/_/g, " ")}
                     </span>
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-600">
+                    {staff.branchId
+                      ? (branches?.find((b) => b.id === staff.branchId)?.name ?? "—")
+                      : <span className="text-gray-400">—</span>}
                   </td>
                   <td className="whitespace-nowrap px-6 py-4">
                     {staff.requiresPasswordChange ? (

@@ -1,4 +1,5 @@
 export type { Staff, LoginCredentials, LoginResponse } from "./auth";
+export type { Branch, CreateBranchPayload, UpdateBranchPayload } from "./branch";
 export type {
   NotificationType,
   NotificationTargetType,
@@ -65,4 +66,7 @@ export type {
   LedgerDetailResult,
   TrialBalanceAccount,
   TrialBalanceResult,
+  Fund,
+  CreateFundPayload,
+  UpdateFundPayload,
 } from "./finance";
