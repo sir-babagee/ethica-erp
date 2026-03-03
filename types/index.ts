@@ -45,6 +45,8 @@ export type {
   SourceModule,
   ShariahTag,
   JournalStatus,
+  ClientType,
+  ClientSearchResult,
   CoaGroup,
   CoaSubGroup,
   CoaGroupFlat,

@@ -10,12 +10,14 @@ import {
 } from "@/services/finance";
 import { useAuthStore } from "@/stores/authStore";
 import { formatAmountInputDisplay, parseFormattedNumber } from "@/utils/priceFormatter";
+import ClientIdAutocomplete from "@/components/ClientIdAutocomplete";
 import type {
   CoaGroup,
   CreateJournalLinePayload,
   ShariahTag,
   SourceModule,
   Fund,
+  ClientType,
 } from "@/types";
 
 const SOURCE_MODULE_OPTIONS: { value: SourceModule; label: string }[] = [
@@ -89,7 +91,12 @@ export default function NewJournalEntryPage() {
   const [sourceModule, setSourceModule] = useState<SourceModule>("manual");
   const [narration, setNarration] = useState("");
   const [fundId, setFundId] = useState("");
-  const [clientId, setClientId] = useState("");
+  const [selectedClient, setSelectedClient] = useState<{
+    id: string;
+    name: string;
+    customerId: string | null;
+    type: ClientType;
+  } | null>(null);
   const [lines, setLines] = useState<LineState[]>([emptyLine(), emptyLine()]);
   const [error, setError] = useState("");
   const [fxRateCache, setFxRateCache] = useState<Record<string, number>>({});
@@ -204,7 +211,8 @@ export default function NewJournalEntryPage() {
         sourceModule,
         narration: narration.trim() || undefined,
         fundId: fundId || undefined,
-        clientId: clientId.trim() || undefined,
+        clientId: selectedClient?.id || undefined,
+        clientType: selectedClient?.type || undefined,
         lines: payload,
       });
       router.push("/u/finance/accounting-transactions");
@@ -345,18 +353,15 @@ export default function NewJournalEntryPage() {
               )}
             </div>
 
-            {/* Client ID */}
+            {/* Client */}
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">
-                Client ID{" "}
+                Client{" "}
                 <span className="font-normal text-gray-400">(optional)</span>
               </label>
-              <input
-                type="text"
-                placeholder="Investor / client identifier"
-                value={clientId}
-                onChange={(e) => setClientId(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              <ClientIdAutocomplete
+                value={selectedClient}
+                onChange={setSelectedClient}
               />
             </div>
 

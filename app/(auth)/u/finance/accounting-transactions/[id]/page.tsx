@@ -222,7 +222,30 @@ export default function JournalEntryDetailPage() {
             label="Fund"
             value={journal.fund?.name ?? journal.fundId ?? "—"}
           />
-          <MetaField label="Client ID" value={journal.clientId} />
+          <MetaField
+            label="Client"
+            value={
+              journal.client ? (
+                <span className="flex items-center gap-1.5">
+                  <span
+                    className={`rounded px-1.5 py-0.5 text-xs font-semibold ${
+                      journal.client.type === "individual"
+                        ? "bg-blue-100 text-blue-700"
+                        : "bg-purple-100 text-purple-700"
+                    }`}
+                  >
+                    {journal.client.type === "individual" ? "Individual" : "Corporate"}
+                  </span>
+                  <span className="font-medium">
+                    {journal.client.customerId ?? journal.client.id}
+                  </span>
+                  <span className="text-gray-400">{journal.client.name}</span>
+                </span>
+              ) : journal.clientId ? (
+                journal.clientId
+              ) : null
+            }
+          />
           <MetaField
             label="Branch"
             value={journal.branch?.name ?? journal.entityId ?? "—"}

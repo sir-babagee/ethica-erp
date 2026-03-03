@@ -22,6 +22,15 @@ export type ShariahTag = 'halal' | 'haram' | 'purification';
 
 export type JournalStatus = 'pending' | 'posted';
 
+export type ClientType = 'individual' | 'corporate';
+
+export interface ClientSearchResult {
+  id: string;
+  customerId: string | null;
+  name: string;
+  type: ClientType;
+}
+
 // ─── Chart of Accounts ────────────────────────────────────────────────────────
 
 export interface CoaSubGroup {
@@ -110,6 +119,7 @@ export interface JournalEntry {
   sourceModule: SourceModule;
   fundId: string | null;
   clientId: string | null;
+  clientType: ClientType | null;
   entityId: string | null;
   narration: string | null;
   status: JournalStatus;
@@ -123,6 +133,7 @@ export interface JournalEntry {
   updatedAt: string;
   fund?: { id: string; name: string; code: string } | null;
   branch?: { id: string; name: string; code: string } | null;
+  client?: ClientSearchResult | null;
 }
 
 export interface JournalEntriesResponse {
@@ -148,6 +159,7 @@ export interface CreateJournalEntryPayload {
   narration?: string;
   fundId?: string;
   clientId?: string;
+  clientType?: ClientType;
   lines: CreateJournalLinePayload[];
 }
 

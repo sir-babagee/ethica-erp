@@ -20,6 +20,7 @@ import type {
   Fund,
   CreateFundPayload,
   UpdateFundPayload,
+  ClientSearchResult,
 } from "@/types";
 
 const COA_KEY = "finance-coa";
@@ -246,6 +247,27 @@ export function useApproveJournalEntry() {
       void queryClient.invalidateQueries({ queryKey: [GL_KEY] });
       void queryClient.invalidateQueries({ queryKey: [TB_KEY] });
     },
+  });
+}
+
+export function useClientSearch(q: string) {
+  return useQuery({
+    queryKey: ["client-search", q],
+    queryFn: async (): Promise<ClientSearchResult[]> => {
+      if (!q.trim()) return [];
+      const [individualsRes, corporatesRes] = await Promise.all([
+        api.get<ClientSearchResult[]>("/api/proxy/customers/search", {
+          params: { q, limit: 8 },
+        }),
+        api.get<ClientSearchResult[]>(
+          "/api/proxy/corporate-customers/search",
+          { params: { q, limit: 8 } }
+        ),
+      ]);
+      return [...individualsRes.data, ...corporatesRes.data];
+    },
+    enabled: q.trim().length >= 2,
+    staleTime: 10_000,
   });
 }
 
