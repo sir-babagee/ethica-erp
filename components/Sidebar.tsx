@@ -604,9 +604,16 @@ export function Sidebar() {
               {user?.firstName} {user?.lastName}
             </p>
             <p className="truncate text-xs text-gray-500">{user?.email}</p>
-            <span className="mt-1 inline-block rounded bg-primary/10 px-2 py-0.5 text-xs font-medium capitalize text-primary">
-              {user?.role ? user.role.replace(/_/g, " ") : ""}
-            </span>
+            <div className="mt-1 flex items-center gap-2">
+              <span className="inline-block rounded bg-primary/10 px-2 py-0.5 text-xs font-medium capitalize text-primary">
+                {user?.role ? user.role.replace(/_/g, " ") : ""}
+              </span>
+              {user?.staffId && (
+                <span className="font-mono text-xs text-gray-400">
+                  {user.staffId}
+                </span>
+              )}
+            </div>
           </div>
           <div className="space-y-0.5">
             <Link

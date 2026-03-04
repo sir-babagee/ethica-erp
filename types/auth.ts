@@ -1,11 +1,13 @@
 export type Staff = {
   id: string;
+  staffId: string | null;
   firstName: string;
   lastName: string;
   email: string;
   role: string;
   branchId: string | null;
   requiresPasswordChange: boolean;
+  isBlocked: boolean;
   createdAt: string;
   updatedAt: string;
 };

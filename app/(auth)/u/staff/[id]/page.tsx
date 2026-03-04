@@ -6,8 +6,8 @@ import { useParams, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { useAuthStore } from "@/stores/authStore";
-import { PERMISSIONS, ADMIN_ROLE } from "@/constants/roles";
-import { useAllStaff, useUpdateStaff } from "@/services/staff";
+import { PERMISSIONS } from "@/constants/roles";
+import { useAllStaff, useUpdateStaff, useBlockStaff, useUnblockStaff } from "@/services/staff";
 import { useRoles } from "@/services/roles";
 import { useBranches } from "@/services/branches";
 import { useActivityLogs } from "@/services/activityLogs";
@@ -80,10 +80,14 @@ export default function StaffDetailPage() {
   });
   const [editErrors, setEditErrors] = useState<Partial<EditForm>>({});
 
+  const [showBlockConfirm, setShowBlockConfirm] = useState(false);
+
   const { data: staffList, isLoading: staffLoading } = useAllStaff();
   const { data: branches } = useBranches();
   const { data: roles = [] } = useRoles();
   const updateStaff = useUpdateStaff();
+  const blockStaff = useBlockStaff();
+  const unblockStaff = useUnblockStaff();
   const staff = staffList?.find((s) => s.id === id);
 
   const { data, isLoading: logsLoading, error } = useActivityLogs({
@@ -118,12 +122,44 @@ export default function StaffDetailPage() {
     setEditErrors({});
   };
 
+  const handleBlock = () => {
+    blockStaff.mutate(id, {
+      onSuccess: (res) => {
+        toast.success(res.message);
+        setShowBlockConfirm(false);
+      },
+      onError: (err) => {
+        const msg =
+          axios.isAxiosError(err) && err.response?.data?.message
+            ? err.response.data.message
+            : "Failed to block account";
+        toast.error(Array.isArray(msg) ? msg.join(", ") : msg);
+        setShowBlockConfirm(false);
+      },
+    });
+  };
+
+  const handleUnblock = () => {
+    unblockStaff.mutate(id, {
+      onSuccess: (res) => {
+        toast.success(res.message);
+      },
+      onError: (err) => {
+        const msg =
+          axios.isAxiosError(err) && err.response?.data?.message
+            ? err.response.data.message
+            : "Failed to unblock account";
+        toast.error(Array.isArray(msg) ? msg.join(", ") : msg);
+      },
+    });
+  };
+
   const validateEdit = (): boolean => {
     const next: Partial<EditForm> = {};
     if (!editForm.firstName.trim()) next.firstName = "First name is required";
     if (!editForm.lastName.trim()) next.lastName = "Last name is required";
     // Role is locked for admin accounts — skip validation
-    if (!isTargetAdmin && !editForm.role) next.role = "Role is required";
+    if (!isTargetSystemRole && !editForm.role) next.role = "Role is required";
     setEditErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -138,8 +174,8 @@ export default function StaffDetailPage() {
         input: {
           firstName: editForm.firstName.trim(),
           lastName: editForm.lastName.trim(),
-          // Never send role when editing an admin account
-          ...(!isTargetAdmin && { role: editForm.role }),
+          // Never send role when editing a system-role account
+          ...(!isTargetSystemRole && { role: editForm.role }),
           branchId: editForm.branchId || null,
         },
       },
@@ -164,8 +200,8 @@ export default function StaffDetailPage() {
   const getRoleLabel = (roleSlug: string) =>
     roles.find((r) => r.name === roleSlug)?.label ?? roleSlug.replace(/_/g, " ");
 
-  // When the target is an admin, role cannot be changed — only name and branch are editable
-  const isTargetAdmin = staff?.role === ADMIN_ROLE;
+  // Role is locked (and blocking disabled) when the target staff holds a system role
+  const isTargetSystemRole = roles.find((r) => r.name === staff?.role)?.isSystem ?? false;
 
   const resolvedBranchName =
     staff?.branchId
@@ -223,26 +259,63 @@ export default function StaffDetailPage() {
       <div className="mb-8 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
         <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
           <div>
-            <h1 className="text-xl font-semibold text-gray-900">
-              {staff.firstName} {staff.lastName}
-            </h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-xl font-semibold text-gray-900">
+                {staff.firstName} {staff.lastName}
+              </h1>
+              {staff.isBlocked && (
+                <span className="inline-flex rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-700">
+                  Blocked
+                </span>
+              )}
+            </div>
             <p className="mt-1 text-sm text-gray-500">{staff.email}</p>
           </div>
           {isAdmin && !isEditing && (
-            <button
-              type="button"
-              onClick={openEdit}
-              className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-            >
-              <PencilIcon className="h-4 w-4" />
-              Edit Details
-            </button>
+            <div className="flex items-center gap-2">
+              {!isTargetSystemRole && (
+                staff.isBlocked ? (
+                  <button
+                    type="button"
+                    onClick={handleUnblock}
+                    disabled={unblockStaff.isPending}
+                    className="inline-flex items-center gap-2 rounded-lg border border-emerald-300 bg-white px-3 py-2 text-sm font-medium text-emerald-700 shadow-sm transition-colors hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-60"
+                  >
+                    {unblockStaff.isPending ? "Unblocking…" : "Unblock Account"}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setShowBlockConfirm(true)}
+                    className="inline-flex items-center gap-2 rounded-lg border border-red-300 bg-white px-3 py-2 text-sm font-medium text-red-600 shadow-sm transition-colors hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                  >
+                    Block Account
+                  </button>
+                )
+              )}
+              <button
+                type="button"
+                onClick={openEdit}
+                className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+              >
+                <PencilIcon className="h-4 w-4" />
+                Edit Details
+              </button>
+            </div>
           )}
         </div>
 
         {/* View mode */}
         {!isEditing && (
           <div className="flex flex-wrap gap-x-8 gap-y-5 px-6 py-5">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wider text-gray-400">
+                Staff ID
+              </p>
+              <p className="mt-1 font-mono text-sm font-medium text-gray-900">
+                {staff.staffId ?? "—"}
+              </p>
+            </div>
             <div>
               <p className="text-xs font-medium uppercase tracking-wider text-gray-400">
                 Role
@@ -264,7 +337,11 @@ export default function StaffDetailPage() {
                 Status
               </p>
               <p className="mt-1">
-                {staff.requiresPasswordChange ? (
+                {staff.isBlocked ? (
+                  <span className="inline-flex rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-700">
+                    Blocked
+                  </span>
+                ) : staff.requiresPasswordChange ? (
                   <span className="inline-flex rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800">
                     Password change required
                   </span>
@@ -296,8 +373,8 @@ export default function StaffDetailPage() {
         {isEditing && (
           <form onSubmit={handleSaveEdit} className="px-6 py-5">
             <p className="mb-4 text-sm font-medium text-gray-500">
-              {isTargetAdmin
-                ? "Admin accounts — only name and branch can be updated. Role and email cannot be changed."
+              {isTargetSystemRole
+                ? "System accounts — only name and branch can be updated. Role and email cannot be changed."
                 : "Edit staff details below. Email address cannot be changed."}
             </p>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -359,7 +436,7 @@ export default function StaffDetailPage() {
                 <label className="mb-1 block text-sm font-medium text-gray-700">
                   Role
                 </label>
-                {isTargetAdmin ? (
+                {isTargetSystemRole ? (
                   <>
                     <div className="flex items-center rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5">
                       <span className="text-sm text-gray-500">
@@ -595,6 +672,43 @@ export default function StaffDetailPage() {
           log={selectedLog}
           onClose={() => setSelectedLog(null)}
         />
+      )}
+
+      {showBlockConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-xl bg-white shadow-xl">
+            <div className="border-b border-gray-100 px-6 py-4">
+              <h2 className="text-lg font-semibold text-gray-900">Block Account</h2>
+            </div>
+            <div className="px-6 py-5">
+              <p className="text-sm text-gray-600">
+                Are you sure you want to block{" "}
+                <span className="font-semibold text-gray-900">
+                  {staff.firstName} {staff.lastName}
+                </span>
+                ? They will be immediately signed out and will not be able to sign in until their account is unblocked.
+              </p>
+            </div>
+            <div className="flex items-center justify-end gap-3 border-t border-gray-100 px-6 py-4">
+              <button
+                type="button"
+                onClick={() => setShowBlockConfirm(false)}
+                disabled={blockStaff.isPending}
+                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleBlock}
+                disabled={blockStaff.isPending}
+                className="rounded-lg bg-red-600 px-5 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-60"
+              >
+                {blockStaff.isPending ? "Blocking…" : "Yes, Block Account"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

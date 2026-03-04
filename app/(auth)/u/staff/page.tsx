@@ -78,6 +78,9 @@ export default function StaffPage() {
                 Name
               </th>
               <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                Staff ID
+              </th>
+              <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                 Email
               </th>
               <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
@@ -97,7 +100,7 @@ export default function StaffPage() {
           <tbody className="divide-y divide-gray-200 bg-white">
             {              staffList?.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
                   No staff members yet.
                 </td>
               </tr>
@@ -113,6 +116,9 @@ export default function StaffPage() {
                       {staff.firstName} {staff.lastName}
                     </span>
                   </td>
+                  <td className="whitespace-nowrap px-6 py-4 font-mono text-sm text-gray-600">
+                    {staff.staffId ?? <span className="text-gray-400">—</span>}
+                  </td>
                   <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-600">
                     {staff.email}
                   </td>
@@ -127,7 +133,11 @@ export default function StaffPage() {
                       : <span className="text-gray-400">—</span>}
                   </td>
                   <td className="whitespace-nowrap px-6 py-4">
-                    {staff.requiresPasswordChange ? (
+                    {staff.isBlocked ? (
+                      <span className="inline-flex rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-700">
+                        Blocked
+                      </span>
+                    ) : staff.requiresPasswordChange ? (
                       <span className="inline-flex rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800">
                         Password change required
                       </span>

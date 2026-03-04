@@ -62,6 +62,24 @@ function BadgeIcon({ className }: { className?: string }) {
   );
 }
 
+function IdCardIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0M9 12h.01M15 12h.01M9 16h6"
+      />
+    </svg>
+  );
+}
+
 function BranchIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -199,6 +217,19 @@ export default function ProfilePage() {
           {/* ── Edit form (admins only) ───────────────────────────────────── */}
           {isAdmin && editing ? (
             <div className="mt-8 space-y-4">
+              {user.staffId && (
+                <div>
+                  <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-gray-500">
+                    Staff ID
+                  </label>
+                  <input
+                    type="text"
+                    value={user.staffId}
+                    disabled
+                    className="w-full cursor-not-allowed rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 font-mono text-sm text-gray-400"
+                  />
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-gray-500">
@@ -293,6 +324,9 @@ export default function ProfilePage() {
           ) : (
             /* ── Read-only view ──────────────────────────────────────────── */
             <div className="mt-8 space-y-6">
+              {user.staffId && (
+                <InfoRow label="Staff ID" value={user.staffId} icon={IdCardIcon} />
+              )}
               <InfoRow label="Email" value={user.email} icon={MailIcon} />
               <InfoRow
                 label="Role"
