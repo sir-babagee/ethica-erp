@@ -7,6 +7,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { useLogin } from "@/lib/auth";
 import { useAuthStore } from "@/stores/authStore";
+import { useForgotPassword } from "@/services/staff";
 
 export default function StaffLoginPage() {
   const router = useRouter();
@@ -15,7 +16,32 @@ export default function StaffLoginPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotSubmitted, setForgotSubmitted] = useState(false);
+
   const { mutate: loginMutation, isPending } = useLogin();
+  const forgotPassword = useForgotPassword();
+
+  const handleForgotSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotEmail.trim()) return;
+    forgotPassword.mutate(forgotEmail.trim(), {
+      onSuccess: () => {
+        setForgotSubmitted(true);
+      },
+      onError: () => {
+        // Always show success to prevent email enumeration
+        setForgotSubmitted(true);
+      },
+    });
+  };
+
+  const closeForgotModal = () => {
+    setShowForgotModal(false);
+    setForgotEmail("");
+    setForgotSubmitted(false);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,6 +73,7 @@ export default function StaffLoginPage() {
   };
 
   return (
+    <>
     <div className="min-h-screen flex">
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-linear-to-br from-primary via-primary/95 to-primary/90">
         <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(254,170,54,0.15)_0%,transparent_50%,rgba(160,77,3,0.2)_100%)]" />
@@ -154,12 +181,13 @@ export default function StaffLoginPage() {
             </div>
 
             <div className="flex items-center justify-between">
-              <a
-                href="#"
+              <button
+                type="button"
+                onClick={() => setShowForgotModal(true)}
                 className="text-sm font-medium text-primary hover:text-primary/90 focus:outline-none focus:underline"
               >
                 Forgot password?
-              </a>
+              </button>
             </div>
 
             <button
@@ -177,5 +205,77 @@ export default function StaffLoginPage() {
         </div>
       </div>
     </div>
+
+    {/* Forgot Password Modal */}
+    {showForgotModal && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="w-full max-w-md rounded-xl bg-white shadow-xl">
+          <div className="border-b border-gray-100 px-6 py-4">
+            <h2 className="text-lg font-semibold text-gray-900">
+              Forgot Password
+            </h2>
+          </div>
+
+          {forgotSubmitted ? (
+            <div className="px-6 py-8 text-center">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100">
+                <svg className="h-6 w-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <p className="font-medium text-gray-900">Request submitted</p>
+              <p className="mt-2 text-sm text-gray-500">
+                If your email is registered, your administrator has been notified and will reset your password shortly.
+              </p>
+              <button
+                type="button"
+                onClick={closeForgotModal}
+                className="mt-6 w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white hover:bg-primary/90"
+              >
+                Back to Sign In
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleForgotSubmit}>
+              <div className="px-6 py-5">
+                <p className="mb-4 text-sm text-gray-600">
+                  Enter your work email address. Your administrator will be notified and will reset your password.
+                </p>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  Email address
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={forgotEmail}
+                  onChange={(e) => setForgotEmail(e.target.value)}
+                  placeholder="you@ethicacapital.com"
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 placeholder-gray-400 transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  autoFocus
+                />
+              </div>
+              <div className="flex items-center justify-end gap-3 border-t border-gray-100 px-6 py-4">
+                <button
+                  type="button"
+                  onClick={closeForgotModal}
+                  disabled={forgotPassword.isPending}
+                  className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={forgotPassword.isPending || !forgotEmail.trim()}
+                  className="rounded-lg bg-primary px-5 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-60"
+                >
+                  {forgotPassword.isPending ? "Submitting…" : "Submit Request"}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      </div>
+    )}
+    </>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
 import {
   useNotifications,
@@ -94,18 +95,28 @@ function NotificationSkeleton() {
 function NotificationRow({
   notification,
   onRead,
+  onNavigate,
 }: {
   notification: Notification;
   onRead: (id: string) => void;
+  onNavigate: (path: string) => void;
 }) {
+  const staffId =
+    notification.metadata?.eventType === "password_reset_request"
+      ? (notification.metadata.requestingStaffId as string | undefined)
+      : undefined;
+
+  const handleClick = () => {
+    if (!notification.isRead) onRead(notification.id);
+    if (staffId) onNavigate(`/u/staff/${staffId}`);
+  };
+
   return (
     <div
       className={`cursor-pointer border-l-4 px-6 py-4 transition-colors hover:bg-gray-50/80 ${
         typeStyles[notification.type] ?? typeStyles.info
       } ${!notification.isRead ? "opacity-100" : "opacity-60"}`}
-      onClick={() => {
-        if (!notification.isRead) onRead(notification.id);
-      }}
+      onClick={handleClick}
     >
       <div className="flex gap-3">
         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/80 text-sm shadow-sm">
@@ -125,9 +136,19 @@ function NotificationRow({
           <p className="mt-0.5 line-clamp-2 text-sm text-gray-600">
             {notification.message}
           </p>
-          <p className="mt-2 text-xs text-gray-400">
-            {timeAgo(notification.createdAt)}
-          </p>
+          <div className="mt-2 flex items-center justify-between gap-2">
+            <p className="text-xs text-gray-400">
+              {timeAgo(notification.createdAt)}
+            </p>
+            {staffId && (
+              <span className="inline-flex items-center gap-1 text-xs font-medium text-primary">
+                View profile
+                <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -138,6 +159,7 @@ function NotificationRow({
 
 export function NotificationDrawer() {
   const [isOpen, setIsOpen] = useState(false);
+  const router = useRouter();
 
   const { data: unreadCount = 0 } = useUnreadCount();
   const { data, isLoading } = useNotifications(1, 20);
@@ -161,6 +183,11 @@ export function NotificationDrawer() {
 
   function handleMarkAll() {
     markAllAsRead.mutate(undefined, { onSuccess: () => setIsOpen(false) });
+  }
+
+  function handleNavigate(path: string) {
+    setIsOpen(false);
+    router.push(path);
   }
 
   return (
@@ -237,6 +264,7 @@ export function NotificationDrawer() {
                   key={n.id}
                   notification={n}
                   onRead={handleMarkOne}
+                  onNavigate={handleNavigate}
                 />
               ))}
             </div>

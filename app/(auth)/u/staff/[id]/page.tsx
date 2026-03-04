@@ -7,7 +7,7 @@ import toast from "react-hot-toast";
 import axios from "axios";
 import { useAuthStore } from "@/stores/authStore";
 import { PERMISSIONS } from "@/constants/roles";
-import { useAllStaff, useUpdateStaff, useBlockStaff, useUnblockStaff } from "@/services/staff";
+import { useAllStaff, useUpdateStaff, useBlockStaff, useUnblockStaff, useResetStaffPassword } from "@/services/staff";
 import { useRoles } from "@/services/roles";
 import { useBranches } from "@/services/branches";
 import { useActivityLogs } from "@/services/activityLogs";
@@ -81,6 +81,8 @@ export default function StaffDetailPage() {
   const [editErrors, setEditErrors] = useState<Partial<EditForm>>({});
 
   const [showBlockConfirm, setShowBlockConfirm] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [resetResult, setResetResult] = useState<{ message: string; tempPassword?: string } | null>(null);
 
   const { data: staffList, isLoading: staffLoading } = useAllStaff();
   const { data: branches } = useBranches();
@@ -88,6 +90,7 @@ export default function StaffDetailPage() {
   const updateStaff = useUpdateStaff();
   const blockStaff = useBlockStaff();
   const unblockStaff = useUnblockStaff();
+  const resetStaffPassword = useResetStaffPassword();
   const staff = staffList?.find((s) => s.id === id);
 
   const { data, isLoading: logsLoading, error } = useActivityLogs({
@@ -150,6 +153,23 @@ export default function StaffDetailPage() {
             ? err.response.data.message
             : "Failed to unblock account";
         toast.error(Array.isArray(msg) ? msg.join(", ") : msg);
+      },
+    });
+  };
+
+  const handleResetPassword = () => {
+    resetStaffPassword.mutate(id, {
+      onSuccess: (res) => {
+        setShowResetConfirm(false);
+        setResetResult(res);
+      },
+      onError: (err) => {
+        const msg =
+          axios.isAxiosError(err) && err.response?.data?.message
+            ? err.response.data.message
+            : "Failed to reset password";
+        toast.error(Array.isArray(msg) ? msg.join(", ") : msg);
+        setShowResetConfirm(false);
       },
     });
   };
@@ -293,6 +313,13 @@ export default function StaffDetailPage() {
                   </button>
                 )
               )}
+              <button
+                type="button"
+                onClick={() => setShowResetConfirm(true)}
+                className="inline-flex items-center gap-2 rounded-lg border border-amber-300 bg-white px-3 py-2 text-sm font-medium text-amber-700 shadow-sm transition-colors hover:bg-amber-50 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
+              >
+                Reset Password
+              </button>
               <button
                 type="button"
                 onClick={openEdit}
@@ -705,6 +732,87 @@ export default function StaffDetailPage() {
                 className="rounded-lg bg-red-600 px-5 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-60"
               >
                 {blockStaff.isPending ? "Blocking…" : "Yes, Block Account"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reset Password — confirmation modal */}
+      {showResetConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-xl bg-white shadow-xl">
+            <div className="border-b border-gray-100 px-6 py-4">
+              <h2 className="text-lg font-semibold text-gray-900">Reset Password</h2>
+            </div>
+            <div className="px-6 py-5">
+              <p className="text-sm text-gray-600">
+                This will generate a new temporary password for{" "}
+                <span className="font-semibold text-gray-900">
+                  {staff.firstName} {staff.lastName}
+                </span>{" "}
+                and send it to{" "}
+                <span className="font-semibold text-gray-900">{staff.email}</span>.
+                They will be required to set a new password on next login.
+              </p>
+            </div>
+            <div className="flex items-center justify-end gap-3 border-t border-gray-100 px-6 py-4">
+              <button
+                type="button"
+                onClick={() => setShowResetConfirm(false)}
+                disabled={resetStaffPassword.isPending}
+                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleResetPassword}
+                disabled={resetStaffPassword.isPending}
+                className="rounded-lg bg-amber-600 px-5 py-2 text-sm font-medium text-white hover:bg-amber-700 disabled:opacity-60"
+              >
+                {resetStaffPassword.isPending ? "Resetting…" : "Yes, Reset Password"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reset Password — result modal */}
+      {resetResult && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-xl bg-white shadow-xl">
+            <div className="border-b border-gray-100 px-6 py-4">
+              <h2 className="text-lg font-semibold text-gray-900">Password Reset</h2>
+            </div>
+            <div className="px-6 py-5 space-y-4">
+              <div className="flex items-center gap-3 rounded-lg bg-emerald-50 px-4 py-3">
+                <svg className="h-5 w-5 shrink-0 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <p className="text-sm text-emerald-800">{resetResult.message}</p>
+              </div>
+              {resetResult.tempPassword && (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-amber-700">
+                    Dev Mode — Temporary Password
+                  </p>
+                  <p className="font-mono text-lg font-bold tracking-widest text-amber-900">
+                    {resetResult.tempPassword}
+                  </p>
+                  <p className="mt-2 text-xs text-amber-600">
+                    This is only shown in non-production environments.
+                  </p>
+                </div>
+              )}
+            </div>
+            <div className="flex justify-end border-t border-gray-100 px-6 py-4">
+              <button
+                type="button"
+                onClick={() => setResetResult(null)}
+                className="rounded-lg bg-gray-900 px-5 py-2 text-sm font-medium text-white hover:bg-gray-800"
+              >
+                Done
               </button>
             </div>
           </div>

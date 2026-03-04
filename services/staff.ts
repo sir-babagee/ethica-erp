@@ -114,3 +114,35 @@ export function useUnblockStaff() {
     },
   });
 }
+
+export function useForgotPassword() {
+  return useMutation({
+    mutationFn: async (email: string) => {
+      const res = await api.post<{ message: string }>(
+        "/api/staff/forgot-password",
+        { email }
+      );
+      return res.data;
+    },
+  });
+}
+
+export type ResetPasswordResponse = {
+  message: string;
+  tempPassword?: string;
+};
+
+export function useResetStaffPassword() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (staffId: string) => {
+      const res = await api.post<ResetPasswordResponse>(
+        `/api/proxy/staff/${staffId}/reset-password`
+      );
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["staff"] });
+    },
+  });
+}
