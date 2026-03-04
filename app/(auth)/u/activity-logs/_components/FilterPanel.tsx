@@ -3,7 +3,8 @@
 import SearchableSelect from "@/components/SearchableSelect";
 import type { SelectOption, SelectGroup } from "@/components/SearchableSelect";
 import type { Staff } from "@/types/auth";
-import { ALL_ROLES, ACTION_GROUPS, ROLE_LABELS } from "./constants";
+import { useRoles } from "@/services/roles";
+import { ACTION_GROUPS } from "./constants";
 
 interface FilterPanelProps {
   staffRole: string;
@@ -36,6 +37,11 @@ export default function FilterPanel({
   onEndDateChange,
   onClearFilters,
 }: FilterPanelProps) {
+  const { data: roles = [] } = useRoles();
+
+  const getRoleLabel = (roleSlug: string) =>
+    roles.find((r) => r.name === roleSlug)?.label ?? roleSlug.replace(/_/g, " ");
+
   // When a role is active, only show staff of that role in the dropdown
   const staffForDropdown = staffList
     ? staffRole
@@ -43,16 +49,16 @@ export default function FilterPanel({
       : staffList
     : [];
 
-  const roleOptions: SelectOption[] = ALL_ROLES.map(([value, label]) => ({
-    value,
-    label,
+  const roleOptions: SelectOption[] = roles.map((r) => ({
+    value: r.name,
+    label: r.label,
   }));
 
   const staffOptions: SelectOption[] = staffForDropdown.map((s) => ({
     value: s.id,
     label:
       `${s.firstName} ${s.lastName}` +
-      (!staffRole ? ` (${ROLE_LABELS[s.role] ?? s.role})` : ""),
+      (!staffRole ? ` (${getRoleLabel(s.role)})` : ""),
   }));
 
   const activityGroups: SelectGroup[] = ACTION_GROUPS.map((g) => ({

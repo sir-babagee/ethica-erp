@@ -3,14 +3,14 @@
 import { useState } from "react";
 import { Modal, ModalBody, ModalFooter, ModalHeader } from "flowbite-react";
 import { lightModalTheme } from "@/constants/theme";
-import { getHigherEscalationTiers } from "@/constants/roles";
+import { useRoles } from "@/services/roles";
 
 type Props = {
   open: boolean;
   handleClose: () => void;
   onConfirm: (toRole: string, reason?: string) => void;
   isPending: boolean;
-  /** Current assignee role (or user's role for escalation options). */
+  /** Slug of the role currently assigned to the customer/ticket for escalation logic. */
   currentRole: string;
 };
 
@@ -24,7 +24,20 @@ export default function EscalateCustomerModal({
   const [toRole, setToRole] = useState("");
   const [reason, setReason] = useState("");
 
-  const escalationTargets = getHigherEscalationTiers(currentRole);
+  const { data: roles = [] } = useRoles();
+
+  const currentRoleData = roles.find((r) => r.name === currentRole);
+  const escalationTargets =
+    currentRoleData?.escalationTier != null
+      ? roles
+          .filter(
+            (r) =>
+              r.escalationTier != null &&
+              r.escalationTier > currentRoleData.escalationTier!
+          )
+          .sort((a, b) => (a.escalationTier ?? 0) - (b.escalationTier ?? 0))
+          .map((r) => ({ value: r.name, label: r.label }))
+      : [];
 
   const handleConfirm = () => {
     if (!toRole) return;
@@ -74,6 +87,11 @@ export default function EscalateCustomerModal({
               </option>
             ))}
           </select>
+          {escalationTargets.length === 0 && (
+            <p className="mt-1 text-xs text-gray-400">
+              No higher escalation tiers are configured for this role.
+            </p>
+          )}
         </div>
         <div>
           <label

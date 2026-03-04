@@ -250,6 +250,54 @@ export function useApproveJournalEntry() {
   });
 }
 
+export interface BulkApproveResult {
+  succeeded: string[];
+  failed: { id: string; reference: string; error: string }[];
+}
+
+export function useBulkApproveJournalEntries() {
+  const queryClient = useQueryClient();
+
+  const approveOne = (id: string) =>
+    api
+      .post<JournalEntry>(`/api/proxy/finance/journals/${id}/approve`)
+      .then((r) => r.data);
+
+  const bulkApprove = async (
+    entries: { id: string; reference: string }[],
+    onProgress?: (done: number, total: number) => void
+  ): Promise<BulkApproveResult> => {
+    const result: BulkApproveResult = { succeeded: [], failed: [] };
+
+    // Sequential approval respects the cryptographic hash chain ordering
+    for (let i = 0; i < entries.length; i++) {
+      const { id, reference } = entries[i];
+      try {
+        await approveOne(id);
+        result.succeeded.push(id);
+      } catch (err: unknown) {
+        const msg =
+          (err as { response?: { data?: { message?: string | string[] } } })
+            ?.response?.data?.message ?? "Approval failed";
+        result.failed.push({
+          id,
+          reference,
+          error: Array.isArray(msg) ? msg.join(", ") : msg,
+        });
+      }
+      onProgress?.(i + 1, entries.length);
+    }
+
+    void queryClient.invalidateQueries({ queryKey: [JOURNAL_KEY] });
+    void queryClient.invalidateQueries({ queryKey: [GL_KEY] });
+    void queryClient.invalidateQueries({ queryKey: [TB_KEY] });
+
+    return result;
+  };
+
+  return { bulkApprove };
+}
+
 export function useClientSearch(q: string) {
   return useQuery({
     queryKey: ["client-search", q],

@@ -1,51 +1,8 @@
-export const ROLES = {
-  ADMIN: "admin",
-  OVERSEER: "overseer",
-  CUSTOMER_SERVICE: "customer_service",
-  FUND_ACCOUNTANT: "fund_accountant",
-  PORTFOLIO_MANAGER: "portfolio_manager",
-  COMPLIANCE_OFFICER: "compliance_officer",
-  CFO: "cfo",
-  MD: "md",
-  BOARD_MEMBER: "board_member",
-} as const;
-
-export const CREATABLE_ROLES = [
-  { value: ROLES.OVERSEER, label: "Overseer" },
-  { value: ROLES.CUSTOMER_SERVICE, label: "Customer Service" },
-  { value: ROLES.FUND_ACCOUNTANT, label: "Fund Accountant" },
-  { value: ROLES.PORTFOLIO_MANAGER, label: "Portfolio Manager" },
-  { value: ROLES.COMPLIANCE_OFFICER, label: "Compliance Officer" },
-  { value: ROLES.CFO, label: "Chief Financial Officer" },
-  { value: ROLES.MD, label: "MD" },
-  { value: ROLES.BOARD_MEMBER, label: "Board Member" },
-] as const;
-
-/** Escalation chain - ordered from lowest to highest tier.
- * Used to determine which roles can be escalated to. */
-export const ESCALATION_CHAIN = [
-  ROLES.CUSTOMER_SERVICE,
-  ROLES.COMPLIANCE_OFFICER,
-  ROLES.MD,
-  ROLES.BOARD_MEMBER,
-] as const;
-
-const ESCALATION_ROLE_LABELS: Record<string, string> = {
-  [ROLES.CUSTOMER_SERVICE]: "Customer Service",
-  [ROLES.COMPLIANCE_OFFICER]: "Compliance Officer",
-  [ROLES.MD]: "MD",
-  [ROLES.BOARD_MEMBER]: "Board Member",
-};
-
-/** Get all roles higher than the given role in the escalation chain. */
-export function getHigherEscalationTiers(currentRole: string): { value: string; label: string }[] {
-  const idx = ESCALATION_CHAIN.indexOf(currentRole as (typeof ESCALATION_CHAIN)[number]);
-  if (idx < 0 || idx >= ESCALATION_CHAIN.length - 1) return [];
-  return ESCALATION_CHAIN.slice(idx + 1).map((role) => ({
-    value: role,
-    label: ESCALATION_ROLE_LABELS[role] ?? role.replace(/_/g, " "),
-  }));
-}
+/**
+ * Reserved slug for the system admin role. This value is hardcoded because
+ * the admin role is immutable — it cannot be renamed or deleted.
+ */
+export const ADMIN_ROLE = "admin" as const;
 
 export const PERMISSIONS = {
   STAFF_CREATE: "staff:create",
@@ -55,6 +12,8 @@ export const PERMISSIONS = {
   CUSTOMERS_VIEW: "customers:view",
   ACTIVITY_LOGS_VIEW: "activity_logs:view",
   INVESTMENTS_VIEW: "investments:view",
+  /** Assigned to roles that may only see their own investment entries. */
+  INVESTMENTS_VIEW_OWN: "investments:view_own",
   INVESTMENTS_CREATE: "investments:create",
   INVESTMENTS_APPROVE: "investments:approve",
   RATE_GUIDE_VIEW: "rate_guide:view",
@@ -65,29 +24,68 @@ export const PERMISSIONS = {
   FINANCE_MANAGE: "finance:manage",
   FINANCE_COA_MANAGE: "finance:coa_manage",
   FINANCE_APPROVE: "finance:approve",
+  ROLES_MANAGE: "roles:manage",
 } as const;
 
-/**
- * Human-readable display labels for each role.
- * This is the single source of truth for role labels in the ERP.
- * Add new roles here when they are added to the backend.
- */
-export const ROLE_LABELS: Record<string, string> = {
-  [ROLES.ADMIN]: "Admin",
-  [ROLES.OVERSEER]: "Overseer",
-  [ROLES.CUSTOMER_SERVICE]: "Customer Service",
-  [ROLES.FUND_ACCOUNTANT]: "Fund Accountant",
-  [ROLES.PORTFOLIO_MANAGER]: "Portfolio Manager",
-  [ROLES.COMPLIANCE_OFFICER]: "Compliance Officer",
-  [ROLES.CFO]: "Chief Financial Officer",
-  [ROLES.MD]: "MD",
-  [ROLES.BOARD_MEMBER]: "Board Member",
-};
+export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 
 /**
- * All non-admin roles as [value, label] pairs — useful for filter dropdowns
- * and staff creation forms.
+ * All permissions grouped by functional area — used in the roles management UI
+ * to render the permission assignment matrix.
  */
-export const ALL_ROLES = Object.entries(ROLE_LABELS).filter(
-  ([value]) => value !== ROLES.ADMIN
-);
+export const PERMISSION_GROUPS = [
+  {
+    label: "Staff Management",
+    permissions: [
+      { key: PERMISSIONS.STAFF_CREATE, label: "Create & Manage Staff" },
+    ],
+  },
+  {
+    label: "Customer Onboarding",
+    permissions: [
+      { key: PERMISSIONS.CUSTOMERS_VIEW, label: "View Customers" },
+      { key: PERMISSIONS.ONBOARDING_VIEW, label: "View Onboarding Applications" },
+      { key: PERMISSIONS.ONBOARDING_APPROVE, label: "Approve Onboarding Applications" },
+      { key: PERMISSIONS.ONBOARDING_REJECT, label: "Reject Onboarding Applications" },
+    ],
+  },
+  {
+    label: "Investments",
+    permissions: [
+      { key: PERMISSIONS.INVESTMENTS_VIEW, label: "View All Investments" },
+      { key: PERMISSIONS.INVESTMENTS_VIEW_OWN, label: "View Own Investments Only" },
+      { key: PERMISSIONS.INVESTMENTS_CREATE, label: "Create Investment Entries" },
+      { key: PERMISSIONS.INVESTMENTS_APPROVE, label: "Approve / Reject Investments" },
+    ],
+  },
+  {
+    label: "Rate Guide",
+    permissions: [
+      { key: PERMISSIONS.RATE_GUIDE_VIEW, label: "View Rate Guide" },
+      { key: PERMISSIONS.RATE_GUIDE_MANAGE, label: "Manage Rate Guide" },
+    ],
+  },
+  {
+    label: "Portfolio Assets",
+    permissions: [
+      { key: PERMISSIONS.PORTFOLIO_ASSETS_VIEW, label: "View Portfolio Assets" },
+      { key: PERMISSIONS.PORTFOLIO_ASSETS_MANAGE, label: "Manage Portfolio Assets" },
+    ],
+  },
+  {
+    label: "Finance",
+    permissions: [
+      { key: PERMISSIONS.FINANCE_VIEW, label: "View Finance" },
+      { key: PERMISSIONS.FINANCE_MANAGE, label: "Manage Journal Entries" },
+      { key: PERMISSIONS.FINANCE_COA_MANAGE, label: "Manage Chart of Accounts & Funds" },
+      { key: PERMISSIONS.FINANCE_APPROVE, label: "Approve & Post Entries" },
+    ],
+  },
+  {
+    label: "System",
+    permissions: [
+      { key: PERMISSIONS.ACTIVITY_LOGS_VIEW, label: "View Activity Logs" },
+      { key: PERMISSIONS.ROLES_MANAGE, label: "Manage Roles & Permissions" },
+    ],
+  },
+] as const;

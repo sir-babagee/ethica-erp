@@ -5,7 +5,8 @@ import Link from "next/link";
 import { useAuthStore } from "@/stores/authStore";
 import { useBranches } from "@/services/branches";
 import { useUpdateStaff } from "@/services/staff";
-import { ROLE_LABELS, ROLES } from "@/constants/roles";
+import { ADMIN_ROLE } from "@/constants/roles";
+import { useRoles } from "@/services/roles";
 
 function UserIcon({ className }: { className?: string }) {
   return (
@@ -108,6 +109,7 @@ export default function ProfilePage() {
   const setAuth = useAuthStore((s) => s.setAuth);
   const permissions = useAuthStore((s) => s.permissions);
   const { data: branches } = useBranches();
+  const { data: roles = [] } = useRoles();
   const updateStaff = useUpdateStaff();
 
   const [editing, setEditing] = useState(false);
@@ -116,7 +118,10 @@ export default function ProfilePage() {
   const [selectedBranchId, setSelectedBranchId] = useState("");
   const [saveError, setSaveError] = useState("");
 
-  const isAdmin = user?.role === ROLES.ADMIN;
+  const isAdmin = user?.role === ADMIN_ROLE;
+
+  const getRoleLabel = (roleSlug: string) =>
+    roles.find((r) => r.name === roleSlug)?.label ?? roleSlug.replace(/_/g, " ");
 
   const branchName = user?.branchId
     ? branches?.find((b) => b.id === user.branchId)?.name ?? "—"
@@ -237,7 +242,7 @@ export default function ProfilePage() {
                 </label>
                 <input
                   type="text"
-                  value={ROLE_LABELS[user.role] ?? user.role.replace(/_/g, " ")}
+                  value={getRoleLabel(user.role)}
                   disabled
                   className="w-full cursor-not-allowed rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-400"
                 />
@@ -291,7 +296,7 @@ export default function ProfilePage() {
               <InfoRow label="Email" value={user.email} icon={MailIcon} />
               <InfoRow
                 label="Role"
-                value={ROLE_LABELS[user.role] ?? user.role.replace(/_/g, " ")}
+                value={getRoleLabel(user.role)}
                 icon={BadgeIcon}
               />
               <InfoRow label="Branch" value={branchName} icon={BranchIcon} />

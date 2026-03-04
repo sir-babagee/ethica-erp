@@ -6,7 +6,8 @@ import toast from "react-hot-toast";
 import axios from "axios";
 import { useCreateStaff } from "@/services/staff";
 import { useBranches } from "@/services/branches";
-import { CREATABLE_ROLES, PERMISSIONS } from "@/constants/roles";
+import { useRoles } from "@/services/roles";
+import { PERMISSIONS } from "@/constants/roles";
 import { useAuthStore } from "@/stores/authStore";
 
 function CopyButton({ text, label }: { text: string; label: string }) {
@@ -96,6 +97,9 @@ export default function AddStaffPage() {
 
   const { mutate: createStaff, isPending } = useCreateStaff();
   const { data: branches } = useBranches();
+  const { data: roles = [] } = useRoles();
+
+  const creatableRoles = roles.filter((r) => !r.isSystem);
 
   const handleFirstNameChange = (value: string) => {
     setFirstName(value);
@@ -259,8 +263,8 @@ export default function AddStaffPage() {
                 className="mt-1.5 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
               >
                 <option value="">Select role</option>
-                {CREATABLE_ROLES.map((r) => (
-                  <option key={r.value} value={r.value}>
+                {creatableRoles.map((r) => (
+                  <option key={r.id} value={r.name}>
                     {r.label}
                   </option>
                 ))}

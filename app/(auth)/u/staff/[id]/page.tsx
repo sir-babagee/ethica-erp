@@ -6,8 +6,9 @@ import { useParams, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { useAuthStore } from "@/stores/authStore";
-import { PERMISSIONS, ROLE_LABELS, ROLES, CREATABLE_ROLES } from "@/constants/roles";
+import { PERMISSIONS, ADMIN_ROLE } from "@/constants/roles";
 import { useAllStaff, useUpdateStaff } from "@/services/staff";
+import { useRoles } from "@/services/roles";
 import { useBranches } from "@/services/branches";
 import { useActivityLogs } from "@/services/activityLogs";
 import type { ActivityLog } from "@/services/activityLogs";
@@ -16,6 +17,7 @@ import { LIMIT } from "@/app/(auth)/u/activity-logs/_components/constants";
 import ActionBadge from "@/app/(auth)/u/activity-logs/_components/ActionBadge";
 import SkeletonRows from "@/app/(auth)/u/activity-logs/_components/SkeletonRows";
 import LogDetailModal from "@/app/(auth)/u/activity-logs/_components/LogDetailModal";
+import PermissionOverridesPanel from "./_components/PermissionOverridesPanel";
 
 function BackIcon({ className }: { className?: string }) {
   return (
@@ -80,6 +82,7 @@ export default function StaffDetailPage() {
 
   const { data: staffList, isLoading: staffLoading } = useAllStaff();
   const { data: branches } = useBranches();
+  const { data: roles = [] } = useRoles();
   const updateStaff = useUpdateStaff();
   const staff = staffList?.find((s) => s.id === id);
 
@@ -156,8 +159,13 @@ export default function StaffDetailPage() {
     );
   };
 
+  const creatableRoles = roles.filter((r) => !r.isSystem);
+
+  const getRoleLabel = (roleSlug: string) =>
+    roles.find((r) => r.name === roleSlug)?.label ?? roleSlug.replace(/_/g, " ");
+
   // When the target is an admin, role cannot be changed — only name and branch are editable
-  const isTargetAdmin = staff?.role === ROLES.ADMIN;
+  const isTargetAdmin = staff?.role === ADMIN_ROLE;
 
   const resolvedBranchName =
     staff?.branchId
@@ -240,7 +248,7 @@ export default function StaffDetailPage() {
                 Role
               </p>
               <p className="mt-1 text-sm font-medium text-gray-900">
-                {ROLE_LABELS[staff.role] ?? staff.role.replace(/_/g, " ")}
+                {getRoleLabel(staff.role)}
               </p>
             </div>
             <div>
@@ -355,7 +363,7 @@ export default function StaffDetailPage() {
                   <>
                     <div className="flex items-center rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5">
                       <span className="text-sm text-gray-500">
-                        {ROLE_LABELS[staff.role] ?? staff.role}
+                        {getRoleLabel(staff.role)}
                       </span>
                       <span className="ml-2 text-xs text-gray-400">
                         (cannot be changed)
@@ -372,8 +380,8 @@ export default function StaffDetailPage() {
                       className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                     >
                       <option value="">Select role</option>
-                      {CREATABLE_ROLES.map((r) => (
-                        <option key={r.value} value={r.value}>
+                      {creatableRoles.map((r) => (
+                        <option key={r.id} value={r.name}>
                           {r.label}
                         </option>
                       ))}
@@ -435,8 +443,13 @@ export default function StaffDetailPage() {
         )}
       </div>
 
+      {/* Permission overrides — only shown to admins */}
+      {isAdmin && staff && (
+        <PermissionOverridesPanel staffId={staff.id} staffRole={staff.role} />
+      )}
+
       {/* Activity logs */}
-      <div>
+      <div className="mt-8">
         <h2 className="mb-4 text-lg font-semibold text-gray-900">
           Activity Logs
         </h2>

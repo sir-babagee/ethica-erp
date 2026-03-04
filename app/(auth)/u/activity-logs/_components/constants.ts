@@ -1,7 +1,3 @@
-// ROLE_LABELS and ALL_ROLES live in @/constants/roles — the single source
-// of truth for role display labels across the entire ERP.
-export { ROLE_LABELS, ALL_ROLES } from "@/constants/roles";
-
 export const LIMIT = 20;
 
 export const ACTION_GROUPS = [

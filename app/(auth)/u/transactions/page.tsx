@@ -9,7 +9,7 @@ import {
   useRejectInvestment,
 } from "@/services/investments";
 import { useAuthStore } from "@/stores/authStore";
-import { PERMISSIONS, ROLES } from "@/constants/roles";
+import { PERMISSIONS } from "@/constants/roles";
 import type { Investment } from "@/types";
 
 function formatCurrency(amount: number | string): string {
@@ -106,7 +106,6 @@ function RejectModal({
 
 export default function TransactionsPage() {
   const permissions = useAuthStore((s) => s.permissions);
-  const user = useAuthStore((s) => s.user);
 
   const canCreate = permissions.includes(PERMISSIONS.INVESTMENTS_CREATE);
   const canApprove = permissions.includes(PERMISSIONS.INVESTMENTS_APPROVE);
@@ -144,7 +143,7 @@ export default function TransactionsPage() {
     }
   }
 
-  const isFundAccountant = user?.role === ROLES.FUND_ACCOUNTANT;
+  const isViewOwnOnly = permissions.includes(PERMISSIONS.INVESTMENTS_VIEW_OWN);
 
   const filterTabs: { id: StatusFilter; label: string }[] = [
     { id: "all", label: "All" },
@@ -199,7 +198,7 @@ export default function TransactionsPage() {
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Transactions</h1>
             <p className="mt-1 text-gray-500">
-              {isFundAccountant
+              {isViewOwnOnly
                 ? "Your Mudarabah Fund investment entries"
                 : "All Mudarabah Fund investment entries"}
             </p>

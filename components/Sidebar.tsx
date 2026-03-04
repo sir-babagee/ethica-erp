@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
-import { PERMISSIONS, ROLE_LABELS } from "@/constants/roles";
+import { PERMISSIONS, ADMIN_ROLE } from "@/constants/roles";
 
 type NavItem = {
   href: string;
@@ -41,7 +41,7 @@ const navGroups: { id: string; label: string; icon: React.ComponentType<{ classN
     items: [
       { href: "/u/finance/chart-of-accounts", label: "Chart of Accounts", icon: ChartOfAccountsIcon, permissions: [PERMISSIONS.FINANCE_VIEW, PERMISSIONS.FINANCE_MANAGE, PERMISSIONS.FINANCE_COA_MANAGE] },
       { href: "/u/finance/funds", label: "Funds", icon: FundsIcon, permissions: [PERMISSIONS.FINANCE_VIEW, PERMISSIONS.FINANCE_MANAGE, PERMISSIONS.FINANCE_COA_MANAGE] },
-      { href: "/u/finance/accounting-transactions", label: "Accounting", icon: AccountingIcon, permissions: [PERMISSIONS.FINANCE_VIEW, PERMISSIONS.FINANCE_MANAGE, PERMISSIONS.FINANCE_COA_MANAGE] },
+      { href: "/u/finance/accounting-transactions", label: "Entries", icon: AccountingIcon, permissions: [PERMISSIONS.FINANCE_VIEW, PERMISSIONS.FINANCE_MANAGE, PERMISSIONS.FINANCE_COA_MANAGE] },
       { href: "/u/finance/gl", label: "General Ledger", icon: LedgerIcon, permissions: [PERMISSIONS.FINANCE_VIEW, PERMISSIONS.FINANCE_MANAGE, PERMISSIONS.FINANCE_COA_MANAGE] },
       { href: "/u/finance/trial-balance", label: "Trial Balance", icon: TrialBalanceIcon, permissions: [PERMISSIONS.FINANCE_VIEW, PERMISSIONS.FINANCE_MANAGE, PERMISSIONS.FINANCE_COA_MANAGE] },
       { href: "/u/finance/docs", label: "Finance Guide", icon: FinanceGuideIcon, permissions: [PERMISSIONS.FINANCE_VIEW] },
@@ -56,6 +56,7 @@ const navGroups: { id: string; label: string; icon: React.ComponentType<{ classN
       { href: "/u/staff", label: "Staff", icon: UserGroupIcon, permissions: [PERMISSIONS.STAFF_CREATE] },
       { href: "/u/staff/add", label: "Add Staff", icon: UserPlusIcon, permissions: [PERMISSIONS.STAFF_CREATE] },
       { href: "/u/branches", label: "Branches", icon: BranchIcon, permissions: [PERMISSIONS.STAFF_CREATE] },
+      { href: "/u/roles", label: "Roles & Permissions", icon: RolesIcon, permissions: [PERMISSIONS.ROLES_MANAGE] },
     ],
   },
   {
@@ -392,6 +393,24 @@ function FinanceGuideIcon({ className }: { className?: string }) {
   );
 }
 
+function RolesIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
+      />
+    </svg>
+  );
+}
+
 function SettingsIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -439,12 +458,16 @@ export function Sidebar() {
   const user = useAuthStore((s) => s.user);
   const permissions = useAuthStore((s) => s.permissions);
 
+  const isSystemAdmin = user?.role === ADMIN_ROLE;
+
   const filteredGroups = useMemo(
     () =>
       navGroups
         .map((group) => ({
           ...group,
           items: group.items.filter((item) => {
+            // System admin bypasses all permission checks — they have everything
+            if (isSystemAdmin) return true;
             if (item.permissions && item.permissions.length > 0) {
               return item.permissions.some((p) => permissions.includes(p));
             }
@@ -452,7 +475,7 @@ export function Sidebar() {
           }),
         }))
         .filter((group) => group.items.length > 0),
-    [permissions]
+    [permissions, isSystemAdmin]
   );
 
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -563,7 +586,7 @@ export function Sidebar() {
             </p>
             <p className="truncate text-xs text-gray-500">{user?.email}</p>
             <span className="mt-1 inline-block rounded bg-primary/10 px-2 py-0.5 text-xs font-medium capitalize text-primary">
-              {user?.role ? (ROLE_LABELS[user.role] ?? user.role.replace(/_/g, " ")) : ""}
+              {user?.role ? user.role.replace(/_/g, " ") : ""}
             </span>
           </div>
           <div className="space-y-0.5">

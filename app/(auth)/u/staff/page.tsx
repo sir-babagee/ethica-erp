@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 import { useAllStaff } from "@/services/staff";
 import { useBranches } from "@/services/branches";
 import type { Staff } from "@/types/auth";
-import { PERMISSIONS, ROLE_LABELS } from "@/constants/roles";
+import { PERMISSIONS } from "@/constants/roles";
+import { useRoles } from "@/services/roles";
 import { useAuthStore } from "@/stores/authStore";
 
 export default function StaffPage() {
@@ -14,6 +15,10 @@ export default function StaffPage() {
   const permissions = useAuthStore((s) => s.permissions);
   const { data: staffList, isLoading, error } = useAllStaff();
   const { data: branches } = useBranches();
+  const { data: roles = [] } = useRoles();
+
+  const getRoleLabel = (roleSlug: string) =>
+    roles.find((r) => r.name === roleSlug)?.label ?? roleSlug.replace(/_/g, " ");
 
   useEffect(() => {
     if (permissions.length > 0 && !permissions.includes(PERMISSIONS.STAFF_CREATE)) {
@@ -113,7 +118,7 @@ export default function StaffPage() {
                   </td>
                   <td className="whitespace-nowrap px-6 py-4">
                     <span className="inline-flex rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium capitalize text-primary">
-                      {ROLE_LABELS[staff.role] ?? staff.role.replace(/_/g, " ")}
+                      {getRoleLabel(staff.role)}
                     </span>
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-600">
