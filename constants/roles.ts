@@ -61,6 +61,10 @@ export const PERMISSIONS = {
   RATE_GUIDE_MANAGE: "rate_guide:manage",
   PORTFOLIO_ASSETS_VIEW: "portfolio_assets:view",
   PORTFOLIO_ASSETS_MANAGE: "portfolio_assets:manage",
+  FINANCE_VIEW: "finance:view",
+  FINANCE_MANAGE: "finance:manage",
+  FINANCE_COA_MANAGE: "finance:coa_manage",
+  FINANCE_APPROVE: "finance:approve",
 } as const;
 
 /**

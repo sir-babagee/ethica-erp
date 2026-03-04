@@ -9,6 +9,14 @@ export type CreateStaffInput = {
   lastName: string;
   email: string;
   role: string;
+  branchId: string;
+};
+
+export type UpdateStaffInput = {
+  firstName?: string;
+  lastName?: string;
+  role?: string;
+  branchId?: string | null;
 };
 
 export type CreateStaffResponse = {
@@ -39,6 +47,28 @@ export function useAllStaff() {
     queryFn: async () => {
       const res = await api.get<{ data: Staff[] }>("/api/proxy/staff");
       return res.data.data;
+    },
+  });
+}
+
+export function useUpdateStaff() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      input,
+    }: {
+      id: string;
+      input: UpdateStaffInput;
+    }) => {
+      const res = await api.patch<{ message: string; data: Staff }>(
+        `/api/proxy/staff/${id}`,
+        input
+      );
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["staff"] });
     },
   });
 }

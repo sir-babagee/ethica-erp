@@ -4,6 +4,7 @@ export type Staff = {
   lastName: string;
   email: string;
   role: string;
+  branchId: string | null;
   requiresPasswordChange: boolean;
   createdAt: string;
   updatedAt: string;

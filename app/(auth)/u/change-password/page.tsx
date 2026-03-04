@@ -3,15 +3,49 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { useUpdatePassword } from "@/services/staff";
+import { useAuthStore } from "@/stores/authStore";
+import { api } from "@/lib/api";
 
 const TEMP_PASSWORD_KEY = "tempPasswordForChange";
 
+const UPPERCASE = /[A-Z]/;
+const LOWERCASE = /[a-z]/;
+const NUMBER = /[0-9]/;
+const SYMBOL = /[!@#$%^&*_\-+=[\]{};:,<.>?]/;
+
+function validateStrongPassword(password: string): { valid: boolean; message?: string } {
+  if (password.length < 8) {
+    return { valid: false, message: "Password must be at least 8 characters" };
+  }
+  if (!UPPERCASE.test(password)) {
+    return { valid: false, message: "Password must contain at least one uppercase letter" };
+  }
+  if (!LOWERCASE.test(password)) {
+    return { valid: false, message: "Password must contain at least one lowercase letter" };
+  }
+  if (!NUMBER.test(password)) {
+    return { valid: false, message: "Password must contain at least one number" };
+  }
+  if (!SYMBOL.test(password)) {
+    return {
+      valid: false,
+      message: "Password must contain at least one symbol (!@#$%^&*_-+=[{]};:,<.>?)",
+    };
+  }
+  return { valid: true };
+}
+
 export default function ChangePasswordPage() {
   const router = useRouter();
-  const [currentPassword, setCurrentPassword] = useState<string | null>(null);
+  const user = useAuthStore((s) => s.user);
+  const setAuth = useAuthStore((s) => s.setAuth);
+
+  const [currentPasswordFromSession, setCurrentPasswordFromSession] = useState<string | null>(null);
+  const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPasswords, setShowPasswords] = useState(false);
@@ -19,24 +53,33 @@ export default function ChangePasswordPage() {
 
   const { mutate: updatePassword, isPending } = useUpdatePassword();
 
+  const isForcedChange = user?.requiresPasswordChange ?? false;
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       const temp = sessionStorage.getItem(TEMP_PASSWORD_KEY);
-      setCurrentPassword(temp);
+      setCurrentPasswordFromSession(temp);
     }
   }, []);
+
+  const effectiveCurrentPassword = isForcedChange ? currentPasswordFromSession : currentPassword;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
-    if (!currentPassword) {
-      setError("Session expired. Please log in again to continue.");
+    if (!effectiveCurrentPassword) {
+      if (isForcedChange) {
+        setError("Session expired. Please log in again to continue.");
+      } else {
+        setError("Current password is required");
+      }
       return;
     }
 
-    if (newPassword.length < 8) {
-      setError("Password must be at least 8 characters");
+    const validation = validateStrongPassword(newPassword);
+    if (!validation.valid) {
+      setError(validation.message ?? "Invalid password");
       return;
     }
 
@@ -46,20 +89,27 @@ export default function ChangePasswordPage() {
     }
 
     updatePassword(
-      { currentPassword, newPassword },
+      { currentPassword: effectiveCurrentPassword, newPassword },
       {
-        onSuccess: () => {
+        onSuccess: async () => {
           sessionStorage.removeItem(TEMP_PASSWORD_KEY);
           toast.success("Password updated successfully");
-          router.push("/u/dashboard");
+          try {
+            const res = await api.get("/api/auth/me");
+            const { staff, permissions } = res.data.data;
+            setAuth(staff, permissions);
+          } catch {
+            // Keep existing auth state if refetch fails
+          }
+          router.push(isForcedChange ? "/u/dashboard" : "/u/profile");
         },
         onError: (err) => {
           const message =
             axios.isAxiosError(err) && err.response?.data?.message
               ? err.response.data.message
               : "Failed to update password";
-          setError(message);
-          toast.error(message);
+          setError(Array.isArray(message) ? message.join(", ") : message);
+          toast.error(Array.isArray(message) ? message.join(", ") : message);
         },
       }
     );
@@ -71,7 +121,8 @@ export default function ChangePasswordPage() {
     window.location.href = "/";
   };
 
-  if (currentPassword === null) {
+  // Loading: waiting for sessionStorage check
+  if (isForcedChange && currentPasswordFromSession === null) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
         <div className="w-full max-w-md rounded-xl border border-gray-200 bg-white p-8 shadow-sm">
@@ -84,7 +135,8 @@ export default function ChangePasswordPage() {
     );
   }
 
-  if (!currentPassword) {
+  // Forced change but no temp password in session — session expired
+  if (isForcedChange && !currentPasswordFromSession) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
         <div className="w-full max-w-md rounded-xl border border-gray-200 bg-white p-8 shadow-sm text-center">
@@ -103,9 +155,7 @@ export default function ChangePasswordPage() {
               />
             </svg>
           </div>
-          <h2 className="text-lg font-semibold text-gray-900">
-            Session expired
-          </h2>
+          <h2 className="text-lg font-semibold text-gray-900">Session expired</h2>
           <p className="mt-2 text-sm text-gray-500">
             Please log in again to set your new password.
           </p>
@@ -135,16 +185,58 @@ export default function ChangePasswordPage() {
 
         <div className="rounded-xl border border-gray-200 bg-white p-8 shadow-sm">
           <h1 className="text-xl font-bold text-gray-900">
-            Set your new password
+            {isForcedChange ? "Set your new password" : "Change password"}
           </h1>
           <p className="mt-1 text-sm text-gray-500">
-            You must change your temporary password before continuing.
+            {isForcedChange
+              ? "You must change your temporary password before continuing."
+              : "Enter your current password and choose a new one."}
           </p>
 
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
             {error && (
               <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
                 {error}
+              </div>
+            )}
+
+            {!isForcedChange && (
+              <div>
+                <label
+                  htmlFor="currentPassword"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Current password
+                </label>
+                <div className="relative mt-1.5">
+                  <input
+                    id="currentPassword"
+                    type={showPasswords ? "text" : "password"}
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    placeholder="••••••••"
+                    required
+                    autoComplete="current-password"
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 pr-12 text-gray-900 placeholder-gray-400 transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPasswords(!showPasswords)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    aria-label={showPasswords ? "Hide password" : "Show password"}
+                  >
+                    {showPasswords ? (
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                      </svg>
+                    ) : (
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
               </div>
             )}
 
@@ -163,6 +255,7 @@ export default function ChangePasswordPage() {
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="••••••••"
                   required
+                  autoComplete="new-password"
                   className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 pr-12 text-gray-900 placeholder-gray-400 transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                 />
                 <button
@@ -202,6 +295,7 @@ export default function ChangePasswordPage() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="••••••••"
                 required
+                autoComplete="new-password"
                 className="mt-1.5 w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 placeholder-gray-400 transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
               />
             </div>
@@ -213,6 +307,17 @@ export default function ChangePasswordPage() {
             >
               {isPending ? "Updating..." : "Update password"}
             </button>
+
+            {!isForcedChange && (
+              <p className="text-center">
+                <Link
+                  href="/u/profile"
+                  className="text-sm font-medium text-gray-500 hover:text-gray-700"
+                >
+                  ← Back to profile
+                </Link>
+              </p>
+            )}
           </form>
         </div>
       </div>

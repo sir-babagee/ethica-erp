@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { useCreateStaff } from "@/services/staff";
+import { useBranches } from "@/services/branches";
 import { CREATABLE_ROLES, PERMISSIONS } from "@/constants/roles";
 import { useAuthStore } from "@/stores/authStore";
 
@@ -90,9 +91,11 @@ export default function AddStaffPage() {
   const [lastName, setLastName] = useState("");
   const [emailLocalPart, setEmailLocalPart] = useState("");
   const [role, setRole] = useState("");
+  const [branchId, setBranchId] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const { mutate: createStaff, isPending } = useCreateStaff();
+  const { data: branches } = useBranches();
 
   const handleFirstNameChange = (value: string) => {
     setFirstName(value);
@@ -121,6 +124,7 @@ export default function AddStaffPage() {
       next.email = "Invalid email format";
     }
     if (!role) next.role = "Role is required";
+    if (!branchId) next.branchId = "Branch is required";
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -128,25 +132,35 @@ export default function AddStaffPage() {
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
-    createStaff({ firstName, lastName, email: fullEmail, role }, {
-      onSuccess: (res) => {
-        const { email: resEmail, tempPassword, firstName: resFirstName, lastName: resLastName } = res.data;
-        setCreatedStaff({ email: resEmail, tempPassword, firstName: resFirstName, lastName: resLastName });
-        setFirstName("");
-        setLastName("");
-        setEmailLocalPart("");
-        setRole("");
-        setErrors({});
-        toast.success("Staff created successfully");
+    createStaff(
+      {
+        firstName,
+        lastName,
+        email: fullEmail,
+        role,
+        branchId,
       },
-      onError: (error) => {
-        const message =
-          axios.isAxiosError(error) && error.response?.data?.message
-            ? error.response.data.message
-            : "Failed to create staff";
-        toast.error(message);
-      },
-    });
+      {
+        onSuccess: (res) => {
+          const { email: resEmail, tempPassword, firstName: resFirstName, lastName: resLastName } = res.data;
+          setCreatedStaff({ email: resEmail, tempPassword, firstName: resFirstName, lastName: resLastName });
+          setFirstName("");
+          setLastName("");
+          setEmailLocalPart("");
+          setRole("");
+          setBranchId("");
+          setErrors({});
+          toast.success("Staff created successfully");
+        },
+        onError: (error) => {
+          const message =
+            axios.isAxiosError(error) && error.response?.data?.message
+              ? error.response.data.message
+              : "Failed to create staff";
+          toast.error(message);
+        },
+      }
+    );
   };
 
   return (
@@ -253,6 +267,40 @@ export default function AddStaffPage() {
               </select>
               {errors.role && (
                 <p className="mt-1 text-sm text-red-600">{errors.role}</p>
+              )}
+            </div>
+
+            <div>
+              <label
+                htmlFor="branch"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Branch
+              </label>
+              <select
+                id="branch"
+                value={branchId}
+                onChange={(e) => setBranchId(e.target.value)}
+                className={`mt-1.5 w-full rounded-lg border bg-white px-4 py-2.5 text-gray-900 transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 ${
+                  errors.branchId ? "border-red-400" : "border-gray-300"
+                }`}
+              >
+                <option value="">Select branch</option>
+                {(branches ?? [])
+                  .filter((b) => b.isActive)
+                  .map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name} ({b.code})
+                    </option>
+                  ))}
+              </select>
+              {errors.branchId ? (
+                <p className="mt-1 text-sm text-red-600">{errors.branchId}</p>
+              ) : (
+                <p className="mt-1 text-xs text-gray-400">
+                  Required — recorded as the entity on all journal entries
+                  posted by this staff member.
+                </p>
               )}
             </div>
 

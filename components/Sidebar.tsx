@@ -1,49 +1,70 @@
 "use client";
 
+import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
 import { PERMISSIONS, ROLE_LABELS } from "@/constants/roles";
 
-const navItems = [
-  { href: "/u/dashboard", label: "Dashboard", icon: DashboardIcon },
-  { href: "/u/customers", label: "Customers", icon: UsersIcon },
+type NavItem = {
+  href: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  permissions?: readonly string[];
+};
+
+const navGroups: { id: string; label: string; icon: React.ComponentType<{ className?: string }>; items: NavItem[] }[] = [
   {
-    href: "/u/transactions",
-    label: "Transactions",
+    id: "core",
+    label: "Core",
+    icon: DashboardIcon,
+    items: [
+      { href: "/u/dashboard", label: "Dashboard", icon: DashboardIcon },
+      { href: "/u/customers", label: "Customers", icon: UsersIcon },
+    ],
+  },
+  {
+    id: "investments",
+    label: "Investments",
     icon: TransactionsIcon,
-    permissions: [PERMISSIONS.INVESTMENTS_VIEW],
+    items: [
+      { href: "/u/transactions", label: "Transactions", icon: TransactionsIcon, permissions: [PERMISSIONS.INVESTMENTS_VIEW] },
+      { href: "/u/rate-guide", label: "Rate Guide", icon: RateGuideIcon, permissions: [PERMISSIONS.RATE_GUIDE_VIEW, PERMISSIONS.RATE_GUIDE_MANAGE] },
+      { href: "/u/portfolio-assets", label: "Portfolio Assets", icon: PortfolioAssetsIcon, permissions: [PERMISSIONS.PORTFOLIO_ASSETS_VIEW, PERMISSIONS.PORTFOLIO_ASSETS_MANAGE] },
+    ],
   },
   {
-    href: "/u/rate-guide",
-    label: "Rate Guide",
-    icon: RateGuideIcon,
-    permissions: [PERMISSIONS.RATE_GUIDE_VIEW, PERMISSIONS.RATE_GUIDE_MANAGE],
+    id: "finance",
+    label: "Finance",
+    icon: LedgerIcon,
+    items: [
+      { href: "/u/finance/chart-of-accounts", label: "Chart of Accounts", icon: ChartOfAccountsIcon, permissions: [PERMISSIONS.FINANCE_VIEW, PERMISSIONS.FINANCE_MANAGE, PERMISSIONS.FINANCE_COA_MANAGE] },
+      { href: "/u/finance/funds", label: "Funds", icon: FundsIcon, permissions: [PERMISSIONS.FINANCE_VIEW, PERMISSIONS.FINANCE_MANAGE, PERMISSIONS.FINANCE_COA_MANAGE] },
+      { href: "/u/finance/accounting-transactions", label: "Accounting", icon: AccountingIcon, permissions: [PERMISSIONS.FINANCE_VIEW, PERMISSIONS.FINANCE_MANAGE, PERMISSIONS.FINANCE_COA_MANAGE] },
+      { href: "/u/finance/gl", label: "General Ledger", icon: LedgerIcon, permissions: [PERMISSIONS.FINANCE_VIEW, PERMISSIONS.FINANCE_MANAGE, PERMISSIONS.FINANCE_COA_MANAGE] },
+      { href: "/u/finance/trial-balance", label: "Trial Balance", icon: TrialBalanceIcon, permissions: [PERMISSIONS.FINANCE_VIEW, PERMISSIONS.FINANCE_MANAGE, PERMISSIONS.FINANCE_COA_MANAGE] },
+      { href: "/u/finance/docs", label: "Finance Guide", icon: FinanceGuideIcon, permissions: [PERMISSIONS.FINANCE_VIEW] },
+      { href: "/u/finance/audit", label: "Ledger Audit", icon: AuditIcon, permissions: [PERMISSIONS.FINANCE_VIEW] },
+    ],
   },
   {
-    href: "/u/portfolio-assets",
-    label: "Portfolio Assets",
-    icon: PortfolioAssetsIcon,
-    permissions: [PERMISSIONS.PORTFOLIO_ASSETS_VIEW, PERMISSIONS.PORTFOLIO_ASSETS_MANAGE],
-  },
-  {
-    href: "/u/staff",
-    label: "Staff",
+    id: "people",
+    label: "People",
     icon: UserGroupIcon,
-    permissions: [PERMISSIONS.STAFF_CREATE],
+    items: [
+      { href: "/u/staff", label: "Staff", icon: UserGroupIcon, permissions: [PERMISSIONS.STAFF_CREATE] },
+      { href: "/u/staff/add", label: "Add Staff", icon: UserPlusIcon, permissions: [PERMISSIONS.STAFF_CREATE] },
+      { href: "/u/branches", label: "Branches", icon: BranchIcon, permissions: [PERMISSIONS.STAFF_CREATE] },
+    ],
   },
   {
-    href: "/u/staff/add",
-    label: "Add Staff",
-    icon: UserPlusIcon,
-    permissions: [PERMISSIONS.STAFF_CREATE],
-  },
-  {
-    href: "/u/activity-logs",
-    label: "Activity Logs",
+    id: "system",
+    label: "System",
     icon: ActivityLogsIcon,
-    permissions: [PERMISSIONS.ACTIVITY_LOGS_VIEW],
+    items: [
+      { href: "/u/activity-logs", label: "Activity Logs", icon: ActivityLogsIcon, permissions: [PERMISSIONS.ACTIVITY_LOGS_VIEW] },
+    ],
   },
 ];
 
@@ -114,6 +135,24 @@ function UserGroupIcon({ className }: { className?: string }) {
         strokeLinejoin="round"
         strokeWidth={2}
         d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+      />
+    </svg>
+  );
+}
+
+function UserIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
       />
     </svg>
   );
@@ -209,6 +248,150 @@ function PortfolioAssetsIcon({ className }: { className?: string }) {
   );
 }
 
+function ChartOfAccountsIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M4 6h16M4 10h16M4 14h16M4 18h16"
+      />
+    </svg>
+  );
+}
+
+function AccountingIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M9 14l2-2 2 2 4-4M3 3h18v18H3V3zm4 10h2m4 0h2"
+      />
+    </svg>
+  );
+}
+
+function LedgerIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+      />
+    </svg>
+  );
+}
+
+function TrialBalanceIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"
+      />
+    </svg>
+  );
+}
+
+function AuditIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+      />
+    </svg>
+  );
+}
+
+function FundsIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
+    </svg>
+  );
+}
+
+function BranchIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+      />
+    </svg>
+  );
+}
+
+function FinanceGuideIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
+    </svg>
+  );
+}
+
 function SettingsIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -233,17 +416,62 @@ function SettingsIcon({ className }: { className?: string }) {
   );
 }
 
+function ChevronDownIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M19 9l-7 7-7-7"
+      />
+    </svg>
+  );
+}
+
 export function Sidebar() {
   const pathname = usePathname();
   const user = useAuthStore((s) => s.user);
   const permissions = useAuthStore((s) => s.permissions);
 
-  const filteredNav = navItems.filter((item) => {
-    if (item.permissions && item.permissions.length > 0) {
-      return item.permissions.some((p) => permissions.includes(p));
-    }
-    return true;
-  });
+  const filteredGroups = useMemo(
+    () =>
+      navGroups
+        .map((group) => ({
+          ...group,
+          items: group.items.filter((item) => {
+            if (item.permissions && item.permissions.length > 0) {
+              return item.permissions.some((p) => permissions.includes(p));
+            }
+            return true;
+          }),
+        }))
+        .filter((group) => group.items.length > 0),
+    [permissions]
+  );
+
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const group = filteredGroups.find((g) =>
+      g.items.some(
+        (item) =>
+          pathname === item.href ||
+          (pathname.startsWith(`${item.href}/`) &&
+            !g.items.some((o) => o.href !== item.href && pathname === o.href))
+      )
+    );
+    if (group) setExpandedId(group.id);
+  }, [pathname, filteredGroups]);
+
+  const toggleGroup = (id: string) => {
+    setExpandedId((prev) => (prev === id ? null : id));
+  };
 
   return (
     <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r border-gray-200 bg-white shadow-sm">
@@ -263,27 +491,67 @@ export function Sidebar() {
         </div>
 
         <nav className="flex-1 space-y-0.5 overflow-y-auto p-4">
-          {filteredNav.map((item) => {
-            const isActive =
-              pathname === item.href ||
-              (pathname.startsWith(`${item.href}/`) &&
-                !navItems.some(
-                  (other) => other.href !== item.href && pathname === other.href
-                ));
-            const Icon = item.icon;
+          {filteredGroups.map((group) => {
+            const isExpanded = expandedId === group.id;
+            const GroupIcon = group.icon;
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                  isActive
-                    ? "bg-primary/10 text-primary"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+              <div
+                key={group.id}
+                className={`rounded-lg transition-colors duration-200 ${
+                  isExpanded ? "bg-gray-50/60" : ""
                 }`}
               >
-                <Icon className="h-5 w-5 shrink-0" />
-                {item.label}
-              </Link>
+                <button
+                  type="button"
+                  onClick={() => toggleGroup(group.id)}
+                  className="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 hover:text-gray-900"
+                >
+                  <div className="flex min-w-0 flex-1 items-center gap-3">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center">
+                      <GroupIcon className="h-5 w-5" />
+                    </span>
+                    <span className="truncate">{group.label}</span>
+                  </div>
+                  <ChevronDownIcon
+                    className={`h-4 w-4 shrink-0 transition-transform duration-200 ease-out ${
+                      isExpanded ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+                <div
+                  className={`grid transition-[grid-template-rows] duration-200 ease-out ${
+                    isExpanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                  }`}
+                >
+                  <div className="min-h-0 overflow-hidden">
+                    <div className="space-y-0.5 border-l-2 border-gray-100 pl-3 pt-1 pb-2 ml-6">
+                      {group.items.map((item) => {
+                        const isActive =
+                          pathname === item.href ||
+                          (pathname.startsWith(`${item.href}/`) &&
+                            !group.items.some(
+                              (o) => o.href !== item.href && pathname === o.href
+                            ));
+                        const Icon = item.icon;
+                        return (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                              isActive
+                                ? "bg-primary/10 text-primary"
+                                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                            }`}
+                          >
+                            <Icon className="h-4 w-4 shrink-0" />
+                            {item.label}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </div>
             );
           })}
         </nav>
@@ -299,6 +567,13 @@ export function Sidebar() {
             </span>
           </div>
           <div className="space-y-0.5">
+            <Link
+              href="/u/profile"
+              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900"
+            >
+              <UserIcon className="h-5 w-5" />
+              Profile
+            </Link>
             <Link
               href="/u/settings"
               className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900"
