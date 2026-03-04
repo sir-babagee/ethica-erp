@@ -11,6 +11,7 @@ export const PERMISSIONS = {
   ONBOARDING_REJECT: "onboarding:reject",
   CUSTOMERS_VIEW: "customers:view",
   ACTIVITY_LOGS_VIEW: "activity_logs:view",
+  ERROR_LOGS_VIEW: "error_logs:view",
   INVESTMENTS_VIEW: "investments:view",
   /** Assigned to roles that may only see their own investment entries. */
   INVESTMENTS_VIEW_OWN: "investments:view_own",
@@ -85,6 +86,7 @@ export const PERMISSION_GROUPS = [
     label: "System",
     permissions: [
       { key: PERMISSIONS.ACTIVITY_LOGS_VIEW, label: "View Activity Logs" },
+      { key: PERMISSIONS.ERROR_LOGS_VIEW, label: "View Error Logs" },
       { key: PERMISSIONS.ROLES_MANAGE, label: "Manage Roles & Permissions" },
     ],
   },

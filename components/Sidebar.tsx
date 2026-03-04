@@ -65,6 +65,7 @@ const navGroups: { id: string; label: string; icon: React.ComponentType<{ classN
     icon: ActivityLogsIcon,
     items: [
       { href: "/u/activity-logs", label: "Activity Logs", icon: ActivityLogsIcon, permissions: [PERMISSIONS.ACTIVITY_LOGS_VIEW] },
+      { href: "/u/error-logs", label: "Error Logs", icon: ErrorLogsIcon, permissions: [PERMISSIONS.ERROR_LOGS_VIEW] },
     ],
   },
 ];
@@ -208,6 +209,24 @@ function ActivityLogsIcon({ className }: { className?: string }) {
         strokeLinejoin="round"
         strokeWidth={2}
         d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
+      />
+    </svg>
+  );
+}
+
+function ErrorLogsIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"
       />
     </svg>
   );
