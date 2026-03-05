@@ -18,6 +18,8 @@ import type {
   LedgerDetailResult,
   TrialBalanceResult,
   Fund,
+  FundAccess,
+  CreateFundAccessPayload,
   CreateFundPayload,
   UpdateFundPayload,
   ClientSearchResult,
@@ -357,20 +359,77 @@ export function useUpdateFund() {
   });
 }
 
+export function useFundAccess(fundId: string) {
+  return useQuery({
+    queryKey: [FUNDS_KEY, fundId, "access"],
+    queryFn: async () => {
+      const res = await api.get<FundAccess[]>(
+        `/api/proxy/finance/funds/${fundId}/access`
+      );
+      return res.data;
+    },
+    enabled: !!fundId,
+  });
+}
+
+export function useAddFundAccess() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      fundId,
+      payload,
+    }: {
+      fundId: string;
+      payload: CreateFundAccessPayload;
+    }) =>
+      api
+        .post<FundAccess>(`/api/proxy/finance/funds/${fundId}/access`, payload)
+        .then((r) => r.data),
+    onSuccess: (_data, vars) => {
+      void queryClient.invalidateQueries({
+        queryKey: [FUNDS_KEY, vars.fundId, "access"],
+      });
+    },
+  });
+}
+
+export function useRemoveFundAccess() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      fundId,
+      accessId,
+    }: {
+      fundId: string;
+      accessId: string;
+    }) =>
+      api
+        .delete(`/api/proxy/finance/funds/${fundId}/access/${accessId}`)
+        .then((r) => r.data),
+    onSuccess: (_data, vars) => {
+      void queryClient.invalidateQueries({
+        queryKey: [FUNDS_KEY, vars.fundId, "access"],
+      });
+    },
+  });
+}
+
 // ─── General Ledger ───────────────────────────────────────────────────────────
 
 export function useCoaBalances(
   dateFrom?: string,
   dateTo?: string,
   aggregated = false,
+  fundId?: string,
 ) {
   return useQuery({
-    queryKey: [GL_KEY, "coa-balances", dateFrom, dateTo, aggregated],
+    queryKey: [GL_KEY, "coa-balances", dateFrom, dateTo, aggregated, fundId],
     queryFn: async () => {
       const params: Record<string, string> = {};
       if (dateFrom) params.dateFrom = dateFrom;
       if (dateTo) params.dateTo = dateTo;
       if (aggregated) params.aggregated = "true";
+      if (fundId) params.fundId = fundId;
       const res = await api.get<CoaBalanceItem[]>(
         "/api/proxy/finance/gl/coa-balances",
         { params }
@@ -385,10 +444,11 @@ export function useLedgerDetail(
   dateFrom?: string,
   dateTo?: string,
   page = 1,
-  limit = 50
+  limit = 50,
+  fundId?: string,
 ) {
   return useQuery({
-    queryKey: [GL_KEY, "ledger", account, dateFrom, dateTo, page, limit],
+    queryKey: [GL_KEY, "ledger", account, dateFrom, dateTo, page, limit, fundId],
     queryFn: async () => {
       const params: Record<string, string | number> = {
         account,
@@ -397,6 +457,7 @@ export function useLedgerDetail(
       };
       if (dateFrom) params.dateFrom = dateFrom;
       if (dateTo) params.dateTo = dateTo;
+      if (fundId) params.fundId = fundId;
       const res = await api.get<LedgerDetailResult>(
         "/api/proxy/finance/gl/ledger",
         { params }
@@ -412,14 +473,16 @@ export function useGl(
   dateFrom?: string,
   dateTo?: string,
   page = 1,
-  limit = 50
+  limit = 50,
+  fundId?: string,
 ) {
   return useQuery({
-    queryKey: [GL_KEY, account, dateFrom, dateTo, page, limit],
+    queryKey: [GL_KEY, account, dateFrom, dateTo, page, limit, fundId],
     queryFn: async () => {
       const params: Record<string, string | number> = { account, page, limit };
       if (dateFrom) params.dateFrom = dateFrom;
       if (dateTo) params.dateTo = dateTo;
+      if (fundId) params.fundId = fundId;
       const res = await api.get<GlResult>("/api/proxy/finance/gl", { params });
       return res.data;
     },
@@ -429,13 +492,15 @@ export function useGl(
 
 // ─── Trial Balance ────────────────────────────────────────────────────────────
 
-export function useTrialBalance(asOfDate: string) {
+export function useTrialBalance(asOfDate: string, fundId?: string) {
   return useQuery({
-    queryKey: [TB_KEY, asOfDate],
+    queryKey: [TB_KEY, asOfDate, fundId],
     queryFn: async () => {
+      const params: Record<string, string> = { asOfDate };
+      if (fundId) params.fundId = fundId;
       const res = await api.get<TrialBalanceResult>(
         "/api/proxy/finance/trial-balance",
-        { params: { asOfDate } }
+        { params }
       );
       return res.data;
     },

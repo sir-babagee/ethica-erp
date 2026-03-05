@@ -136,6 +136,7 @@ export default function NewJournalEntryPage() {
   };
 
   const groups = coaGroups ?? [];
+  const selectedFund = (funds ?? []).find((f) => f.id === fundId) ?? null;
 
   const updateLine = (index: number, patch: Partial<LineState>) => {
     setLines((prev) =>
@@ -284,12 +285,75 @@ export default function NewJournalEntryPage() {
         </div>
       )}
 
+      {selectedFund && (
+        <div className="mx-auto mb-6 max-w-4xl rounded-xl border-2 border-amber-400 bg-amber-50 px-5 py-4 shadow-sm">
+          <div className="flex items-start gap-3">
+            <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-400">
+              <svg
+                className="h-4 w-4 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2.5}
+                  d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+                />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <p className="font-bold text-amber-900">
+                Posting to Fund — not your branch
+              </p>
+              <p className="mt-0.5 text-sm text-amber-800">
+                This journal entry will be recorded exclusively under{" "}
+                <span className="font-semibold">
+                  {selectedFund.name} ({selectedFund.code})
+                </span>
+                . It will{" "}
+                <span className="font-semibold underline">not</span> appear in
+                your branch&apos;s General Ledger or Trial Balance.
+              </p>
+            </div>
+            <span className="shrink-0 rounded-full bg-amber-400 px-3 py-0.5 text-xs font-bold tracking-wide text-white uppercase">
+              {selectedFund.code}
+            </span>
+          </div>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="mx-auto max-w-4xl space-y-6">
         {/* Header fields */}
-        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-500">
-            Journal Header
-          </h2>
+        <div
+          className={`rounded-xl border p-6 shadow-sm transition-colors ${
+            selectedFund
+              ? "border-amber-300 bg-amber-50/30"
+              : "border-gray-200 bg-white"
+          }`}
+        >
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+              Journal Header
+            </h2>
+            {selectedFund && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-0.5 text-xs font-semibold text-amber-800 ring-1 ring-amber-300">
+                <svg
+                  className="h-3 w-3"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                Fund Entry
+              </span>
+            )}
+          </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {/* Date */}
             <div>
@@ -335,9 +399,13 @@ export default function NewJournalEntryPage() {
               <select
                 value={fundId}
                 onChange={(e) => setFundId(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                className={`w-full rounded-lg border px-3 py-2 text-sm font-medium focus:outline-none focus:ring-2 ${
+                  selectedFund
+                    ? "border-amber-400 bg-amber-50 text-amber-900 focus:border-amber-500 focus:ring-amber-300"
+                    : "border-gray-300 text-gray-900 focus:border-primary focus:ring-primary"
+                }`}
               >
-                <option value="">No fund selected</option>
+                <option value="">No fund — post to branch</option>
                 {(funds ?? [])
                   .filter((f) => f.isActive)
                   .map((f) => (
@@ -346,9 +414,24 @@ export default function NewJournalEntryPage() {
                     </option>
                   ))}
               </select>
-              {(!funds || funds.length === 0) && (
+              {selectedFund ? (
+                <p className="mt-1 flex items-center gap-1 text-xs font-medium text-amber-700">
+                  <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      fillRule="evenodd"
+                      d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  Fund entry — will not appear in branch reports
+                </p>
+              ) : (!funds || funds.length === 0) ? (
                 <p className="mt-1 text-xs text-amber-600">
                   No funds configured yet. Create funds under Finance → Funds.
+                </p>
+              ) : (
+                <p className="mt-1 text-xs text-gray-400">
+                  Leave blank to post under your branch
                 </p>
               )}
             </div>
@@ -699,9 +782,17 @@ export default function NewJournalEntryPage() {
           <button
             type="submit"
             disabled={mutation.isPending || !isBalanced || !user?.branchId}
-            className="rounded-lg bg-primary px-6 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-60 disabled:cursor-not-allowed"
+            className={`rounded-lg px-6 py-2 text-sm font-medium text-white transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+              selectedFund
+                ? "bg-amber-500 hover:bg-amber-600"
+                : "bg-primary hover:bg-primary/90"
+            }`}
           >
-            {mutation.isPending ? "Saving…" : "Save as Pending"}
+            {mutation.isPending
+              ? "Saving…"
+              : selectedFund
+              ? `Save to ${selectedFund.code} — Pending`
+              : "Save as Pending"}
           </button>
         </div>
       </form>

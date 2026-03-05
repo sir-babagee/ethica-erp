@@ -69,6 +69,9 @@ export type {
   TrialBalanceAccount,
   TrialBalanceResult,
   Fund,
+  FundAccessType,
+  FundAccess,
+  CreateFundAccessPayload,
   CreateFundPayload,
   UpdateFundPayload,
 } from "./finance";

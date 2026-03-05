@@ -27,7 +27,9 @@ export function Sidebar() {
         .map((group) => ({
           ...group,
           items: group.items.filter((item) => {
-            // System admin bypasses all permission checks — they have everything
+            // Admin-only items are hidden from everyone except admin
+            if (item.adminOnly) return isSystemAdmin;
+            // System admin bypasses all other permission checks
             if (isSystemAdmin) return true;
             if (item.permissions && item.permissions.length > 0) {
               return item.permissions.some((p) => permissions.includes(p));

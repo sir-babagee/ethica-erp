@@ -26,6 +26,8 @@ export type NavItem = {
   label: string;
   icon: ComponentType<{ className?: string }>;
   permissions?: readonly string[];
+  /** When true, this item is only visible to users whose role is 'admin'. */
+  adminOnly?: boolean;
 };
 
 export type NavGroup = {
@@ -61,7 +63,7 @@ export const navGroups: NavGroup[] = [
     icon: LedgerIcon,
     items: [
       { href: "/u/finance/chart-of-accounts", label: "Chart of Accounts", icon: ChartOfAccountsIcon, permissions: [PERMISSIONS.FINANCE_VIEW, PERMISSIONS.FINANCE_MANAGE, PERMISSIONS.FINANCE_COA_MANAGE] },
-      { href: "/u/finance/funds", label: "Funds", icon: FundsIcon, permissions: [PERMISSIONS.FINANCE_VIEW, PERMISSIONS.FINANCE_MANAGE, PERMISSIONS.FINANCE_COA_MANAGE] },
+      { href: "/u/finance/funds", label: "Funds", icon: FundsIcon, adminOnly: true },
       { href: "/u/finance/accounting-transactions", label: "Entries", icon: AccountingIcon, permissions: [PERMISSIONS.FINANCE_VIEW, PERMISSIONS.FINANCE_MANAGE, PERMISSIONS.FINANCE_COA_MANAGE] },
       { href: "/u/finance/gl", label: "General Ledger", icon: LedgerIcon, permissions: [PERMISSIONS.FINANCE_VIEW, PERMISSIONS.FINANCE_MANAGE, PERMISSIONS.FINANCE_COA_MANAGE] },
       { href: "/u/finance/trial-balance", label: "Trial Balance", icon: TrialBalanceIcon, permissions: [PERMISSIONS.FINANCE_VIEW, PERMISSIONS.FINANCE_MANAGE, PERMISSIONS.FINANCE_COA_MANAGE] },

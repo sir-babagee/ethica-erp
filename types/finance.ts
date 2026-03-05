@@ -165,6 +165,24 @@ export interface CreateJournalEntryPayload {
 
 // ─── Funds ────────────────────────────────────────────────────────────────────
 
+export type FundAccessType = 'role' | 'staff';
+
+export interface FundAccess {
+  id: string;
+  fundId: string;
+  type: FundAccessType;
+  role: string | null;
+  staffId: string | null;
+  grantedById: string;
+  createdAt: string;
+}
+
+export interface CreateFundAccessPayload {
+  type: FundAccessType;
+  role?: string;
+  staffId?: string;
+}
+
 export interface Fund {
   id: string;
   name: string;
