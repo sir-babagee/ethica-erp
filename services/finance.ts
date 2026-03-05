@@ -359,13 +359,18 @@ export function useUpdateFund() {
 
 // ─── General Ledger ───────────────────────────────────────────────────────────
 
-export function useCoaBalances(dateFrom?: string, dateTo?: string) {
+export function useCoaBalances(
+  dateFrom?: string,
+  dateTo?: string,
+  aggregated = false,
+) {
   return useQuery({
-    queryKey: [GL_KEY, "coa-balances", dateFrom, dateTo],
+    queryKey: [GL_KEY, "coa-balances", dateFrom, dateTo, aggregated],
     queryFn: async () => {
       const params: Record<string, string> = {};
       if (dateFrom) params.dateFrom = dateFrom;
       if (dateTo) params.dateTo = dateTo;
+      if (aggregated) params.aggregated = "true";
       const res = await api.get<CoaBalanceItem[]>(
         "/api/proxy/finance/gl/coa-balances",
         { params }

@@ -161,7 +161,8 @@ export default function GlPage() {
 
   const { data: coaBalances, isLoading: balancesLoading } = useCoaBalances(
     dateFromParam,
-    dateToParam
+    dateToParam,
+    true
   );
 
   const { data: ledgerData, isLoading: ledgerLoading } = useLedgerDetail(
