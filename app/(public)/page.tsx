@@ -49,8 +49,8 @@ export default function StaffLoginPage() {
       { email, password },
       {
         onSuccess: (res) => {
-          const { staff, permissions } = res.data;
-          setAuth(staff, permissions);
+          const { staff, permissions, enabledModules = [] } = res.data;
+          setAuth(staff, permissions, enabledModules);
           toast.success("Login successful");
           if (staff.requiresPasswordChange) {
             if (typeof window !== "undefined") {

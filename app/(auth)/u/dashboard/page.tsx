@@ -1,6 +1,8 @@
 "use client";
 
 import { useAnalytics } from "@/services/analytics";
+import { useAuthStore } from "@/stores/authStore";
+import { FEATURE_MODULES } from "@/constants/modules";
 
 function StatCard({
   title,
@@ -152,6 +154,9 @@ function UserGroupIcon({ className }: { className?: string }) {
 }
 
 export default function DashboardPage() {
+  const isModuleEnabled = useAuthStore((s) => s.isModuleEnabled);
+  const customersEnabled = isModuleEnabled(FEATURE_MODULES.CUSTOMERS);
+  const analyticsEnabled = isModuleEnabled(FEATURE_MODULES.ANALYTICS);
   const { data: analytics, isLoading, error } = useAnalytics();
 
   if (isLoading) {
@@ -187,92 +192,124 @@ export default function DashboardPage() {
     );
   }
 
+  if (!analyticsEnabled) {
+    return (
+      <div className="p-8">
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+          <p className="mt-1 text-gray-500">Welcome to Ethica ERP</p>
+        </div>
+        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg bg-blue-500/10 p-3">
+              <UserGroupIcon className="h-6 w-6 text-blue-600" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Staff</h2>
+              <p className="text-sm text-gray-500">
+                Use the sidebar to navigate to your available modules.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-8">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Analytics</h1>
         <p className="mt-1 text-gray-500">
-          Customer overview and metrics
+          {customersEnabled ? "Customer overview and metrics" : "System metrics"}
         </p>
       </div>
 
-      <div className="mb-8 rounded-xl border-2 border-primary/20 bg-primary/5 p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-primary">New customers today</p>
-            <p className="mt-1 text-4xl font-bold text-gray-900">
-              {analytics?.newCustomersToday ?? 0}
-            </p>
-            <p className="mt-1 text-sm text-gray-500">
-              {analytics?.newCustomersThisWeek ?? 0} new this week
-            </p>
-          </div>
-          <div className="rounded-lg bg-primary/10 p-4">
-            <SparklesIcon className="h-8 w-8 text-primary" />
+      {customersEnabled && (
+        <div className="mb-8 rounded-xl border-2 border-primary/20 bg-primary/5 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-primary">New customers today</p>
+              <p className="mt-1 text-4xl font-bold text-gray-900">
+                {analytics?.newCustomersToday ?? 0}
+              </p>
+              <p className="mt-1 text-sm text-gray-500">
+                {analytics?.newCustomersThisWeek ?? 0} new this week
+              </p>
+            </div>
+            <div className="rounded-lg bg-primary/10 p-4">
+              <SparklesIcon className="h-8 w-8 text-primary" />
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          title="Total Customers"
-          value={analytics?.totalCustomers ?? 0}
-          subtitle="All applications"
-          icon={<UsersIcon className="h-6 w-6" />}
-          color="primary"
-        />
-        <StatCard
-          title="Unverified"
-          value={analytics?.unverified ?? 0}
-          subtitle="Pending review"
-          icon={<ClockIcon className="h-6 w-6" />}
-          color="amber"
-        />
-        <StatCard
-          title="Approved"
-          value={analytics?.approved ?? 0}
-          subtitle="Active customers"
-          icon={<CheckIcon className="h-6 w-6" />}
-          color="green"
-        />
-        <StatCard
-          title="Rejected"
-          value={analytics?.rejected ?? 0}
-          subtitle="Declined applications"
-          icon={<XIcon className="h-6 w-6" />}
-          color="slate"
-        />
+      <div className={`grid gap-6 sm:grid-cols-2 ${customersEnabled ? "lg:grid-cols-4" : "lg:grid-cols-2"}`}>
+        {customersEnabled && (
+          <>
+            <StatCard
+              title="Total Customers"
+              value={analytics?.totalCustomers ?? 0}
+              subtitle="All applications"
+              icon={<UsersIcon className="h-6 w-6" />}
+              color="primary"
+            />
+            <StatCard
+              title="Unverified"
+              value={analytics?.unverified ?? 0}
+              subtitle="Pending review"
+              icon={<ClockIcon className="h-6 w-6" />}
+              color="amber"
+            />
+            <StatCard
+              title="Approved"
+              value={analytics?.approved ?? 0}
+              subtitle="Active customers"
+              icon={<CheckIcon className="h-6 w-6" />}
+              color="green"
+            />
+            <StatCard
+              title="Rejected"
+              value={analytics?.rejected ?? 0}
+              subtitle="Declined applications"
+              icon={<XIcon className="h-6 w-6" />}
+              color="slate"
+            />
+          </>
+        )}
       </div>
 
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
-        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-900">
-            Customer Status Distribution
-          </h2>
-          <p className="mt-1 text-sm text-gray-500">
-            Breakdown of customer applications by verification status
-          </p>
-          <div className="mt-6 flex flex-wrap gap-4">
-            <div className="flex items-center gap-2">
-              <div className="h-3 w-3 rounded-full bg-primary" />
-              <span className="text-sm text-gray-600">
-                Unverified: {analytics?.unverified ?? 0}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="h-3 w-3 rounded-full bg-emerald-500" />
-              <span className="text-sm text-gray-600">
-                Approved: {analytics?.approved ?? 0}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="h-3 w-3 rounded-full bg-slate-500" />
-              <span className="text-sm text-gray-600">
-                Rejected: {analytics?.rejected ?? 0}
-              </span>
+        {customersEnabled && (
+          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+            <h2 className="text-lg font-semibold text-gray-900">
+              Customer Status Distribution
+            </h2>
+            <p className="mt-1 text-sm text-gray-500">
+              Breakdown of customer applications by verification status
+            </p>
+            <div className="mt-6 flex flex-wrap gap-4">
+              <div className="flex items-center gap-2">
+                <div className="h-3 w-3 rounded-full bg-primary" />
+                <span className="text-sm text-gray-600">
+                  Unverified: {analytics?.unverified ?? 0}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="h-3 w-3 rounded-full bg-emerald-500" />
+                <span className="text-sm text-gray-600">
+                  Approved: {analytics?.approved ?? 0}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="h-3 w-3 rounded-full bg-slate-500" />
+                <span className="text-sm text-gray-600">
+                  Rejected: {analytics?.rejected ?? 0}
+                </span>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-gray-900">

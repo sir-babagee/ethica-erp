@@ -96,8 +96,8 @@ export default function ChangePasswordPage() {
           toast.success("Password updated successfully");
           try {
             const res = await api.get("/api/auth/me");
-            const { staff, permissions } = res.data.data;
-            setAuth(staff, permissions);
+            const { staff, permissions, enabledModules = [] } = res.data.data;
+            setAuth(staff, permissions, enabledModules);
           } catch {
             // Keep existing auth state if refetch fails
           }

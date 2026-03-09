@@ -1,8 +1,11 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { Sidebar } from "@/components/Sidebar";
 import { NotificationDrawer } from "@/components/NotificationDrawer";
+import { useAuthStore } from "@/stores/authStore";
+import { ROUTE_MODULE_MAP } from "@/constants/modules";
 
 export default function UserLayout({
   children,
@@ -10,6 +13,23 @@ export default function UserLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const enabledModules = useAuthStore((s) => s.enabledModules);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+
+  useEffect(() => {
+    if (!isAuthenticated || enabledModules.length === 0) return;
+
+    const disabledRoute = Object.entries(ROUTE_MODULE_MAP).find(
+      ([prefix, moduleId]) =>
+        pathname.startsWith(prefix) && !enabledModules.includes(moduleId),
+    );
+
+    if (disabledRoute) {
+      router.replace("/u/dashboard");
+    }
+  }, [pathname, enabledModules, isAuthenticated, router]);
+
   const isChangePassword = pathname === "/u/change-password";
 
   if (isChangePassword) {

@@ -18,18 +18,22 @@ export function Sidebar() {
   const pathname = usePathname();
   const user = useAuthStore((s) => s.user);
   const permissions = useAuthStore((s) => s.permissions);
+  const enabledModules = useAuthStore((s) => s.enabledModules);
 
   const isSystemAdmin = user?.role === ADMIN_ROLE;
 
   const filteredGroups = useMemo(
     () =>
       navGroups
+        .filter((group) => {
+          if (!group.module) return true;
+          return enabledModules.includes(group.module);
+        })
         .map((group) => ({
           ...group,
           items: group.items.filter((item) => {
-            // Admin-only items are hidden from everyone except admin
+            if (item.module && !enabledModules.includes(item.module)) return false;
             if (item.adminOnly) return isSystemAdmin;
-            // System admin bypasses all other permission checks
             if (isSystemAdmin) return true;
             if (item.permissions && item.permissions.length > 0) {
               return item.permissions.some((p) => permissions.includes(p));
@@ -38,7 +42,7 @@ export function Sidebar() {
           }),
         }))
         .filter((group) => group.items.length > 0),
-    [permissions, isSystemAdmin]
+    [permissions, isSystemAdmin, enabledModules]
   );
 
   const [expandedId, setExpandedId] = useState<string | null>(null);

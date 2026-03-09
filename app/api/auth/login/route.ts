@@ -6,12 +6,13 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const credentials = await req.json();
     const authResponse = await authenticate(credentials, "/staff/login");
 
-    const { staff, permissions, token } = authResponse.data;
+    const { staff, permissions, enabledModules = [], token } = authResponse.data;
 
     const response = NextResponse.json({
       message: "Login successful",
       staff,
       permissions,
+      enabledModules,
     });
 
     await setAuthCookie(response, token);

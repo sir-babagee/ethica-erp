@@ -126,6 +126,7 @@ export default function ProfilePage() {
   const user = useAuthStore((s) => s.user);
   const setAuth = useAuthStore((s) => s.setAuth);
   const permissions = useAuthStore((s) => s.permissions);
+  const enabledModules = useAuthStore((s) => s.enabledModules);
   const { data: branches } = useBranches();
   const { data: roles = [] } = useRoles();
   const updateStaff = useUpdateStaff();
@@ -177,6 +178,7 @@ export default function ProfilePage() {
           branchId: res.data.branchId ?? null,
         },
         permissions,
+        enabledModules,
       );
       setEditing(false);
     } catch (err: unknown) {

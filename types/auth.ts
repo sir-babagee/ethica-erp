@@ -22,6 +22,7 @@ export type LoginResponse = {
   data: {
     staff: Staff;
     permissions: string[];
+    enabledModules: string[];
     token: string;
   };
 };

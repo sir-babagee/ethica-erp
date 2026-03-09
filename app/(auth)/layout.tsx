@@ -29,8 +29,8 @@ export default function AuthLayout({
     api
       .get("/api/auth/me")
       .then((res) => {
-        const { staff, permissions } = res.data.data;
-        setAuth(staff, permissions);
+        const { staff, permissions, enabledModules = [] } = res.data.data;
+        setAuth(staff, permissions, enabledModules);
         if (staff.requiresPasswordChange && pathname !== "/u/change-password") {
           router.replace("/u/change-password");
         }

@@ -1,5 +1,6 @@
 import type { ComponentType } from "react";
 import { PERMISSIONS } from "@/constants/roles";
+import { FEATURE_MODULES, type FeatureModuleId } from "@/constants/modules";
 import {
   DashboardIcon,
   TransactionsIcon,
@@ -28,6 +29,8 @@ export type NavItem = {
   permissions?: readonly string[];
   /** When true, this item is only visible to users whose role is 'admin'. */
   adminOnly?: boolean;
+  /** Feature module this item belongs to. Hidden when the module is disabled. */
+  module?: FeatureModuleId;
 };
 
 export type NavGroup = {
@@ -35,6 +38,8 @@ export type NavGroup = {
   label: string;
   icon: ComponentType<{ className?: string }>;
   items: NavItem[];
+  /** Feature module this entire group belongs to. Hidden when disabled. */
+  module?: FeatureModuleId;
 };
 
 export const navGroups: NavGroup[] = [
@@ -44,13 +49,14 @@ export const navGroups: NavGroup[] = [
     icon: DashboardIcon,
     items: [
       { href: "/u/dashboard", label: "Dashboard", icon: DashboardIcon },
-      { href: "/u/customers", label: "Customers", icon: UsersIcon },
+      { href: "/u/customers", label: "Customers", icon: UsersIcon, module: FEATURE_MODULES.CUSTOMERS },
     ],
   },
   {
     id: "investments",
     label: "Investments",
     icon: TransactionsIcon,
+    module: FEATURE_MODULES.INVESTMENTS,
     items: [
       { href: "/u/transactions", label: "Transactions", icon: TransactionsIcon, permissions: [PERMISSIONS.INVESTMENTS_VIEW] },
       { href: "/u/rate-guide", label: "Rate Guide", icon: RateGuideIcon, permissions: [PERMISSIONS.RATE_GUIDE_VIEW, PERMISSIONS.RATE_GUIDE_MANAGE] },
@@ -61,6 +67,7 @@ export const navGroups: NavGroup[] = [
     id: "finance",
     label: "Finance",
     icon: LedgerIcon,
+    module: FEATURE_MODULES.FINANCE,
     items: [
       { href: "/u/finance/chart-of-accounts", label: "Chart of Accounts", icon: ChartOfAccountsIcon, permissions: [PERMISSIONS.FINANCE_VIEW, PERMISSIONS.FINANCE_MANAGE, PERMISSIONS.FINANCE_COA_MANAGE] },
       { href: "/u/finance/funds", label: "Funds", icon: FundsIcon, adminOnly: true },
